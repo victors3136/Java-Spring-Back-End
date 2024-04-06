@@ -64,7 +64,7 @@ public class EntryController {
 
     @DeleteMapping("/entry/{id}")
     public ResponseEntity<?> deleteOne(@PathVariable UUID id) {
-        return list.removeIf(entry -> entry.getId() == id) ?
+        return list.removeIf(entry -> entry.getId().equals(id)) ?
                 ResponseEntity.noContent().build() :
                 ResponseEntity.notFound().build();
     }
