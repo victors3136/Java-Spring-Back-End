@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public class Entry {
     @Id
-    private final UUID id;
+    private UUID id;
 
     @NotBlank(message = "Name must not be blank")
     private String name;
@@ -96,5 +96,9 @@ public class Entry {
                 (priority < 1) ||
                 (priority > 10) ||
                 (dueDate == null);
+    }
+
+    public void setId(UUID uuid) {
+        this.id = uuid;
     }
 }

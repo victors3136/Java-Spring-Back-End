@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -67,10 +68,17 @@ public class EntryControllerTests {
     @Test
     public void testPatchEntry() throws Exception {
         Entry originalEntry = new Entry("Old Name", "Old Description", (byte) 7, Instant.now());
-        mockMvc.perform(post("/entry")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(originalEntry.toString()));
+        originalEntry.setId(UUID.fromString(
+                mockMvc.perform(post("/entry")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(originalEntry.toString()))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString()
+                        .replaceAll("\"", "")
+        ));
         Entry updatedEntry = new Entry("New Name", "New Description", (byte) 9, Instant.now());
+
         mockMvc.perform(patch("/entry/{id}", originalEntry.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updatedEntry.toString()))
@@ -91,9 +99,15 @@ public class EntryControllerTests {
     public void testGetEntry() throws Exception {
         Entry e1 = new Entry("Old Name", "Old Description", (byte) 7, Instant.now()),
                 e2 = new Entry("aaa", "new Desc", (byte) 1, Instant.now());
-        mockMvc.perform(post("/entry")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(e1.toString()));
+
+        e1.setId(UUID.fromString(
+                mockMvc.perform(post("/entry")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(e1.toString()))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString()
+                        .replaceAll("\"", "")));
         mockMvc.perform(get("/entry/{id}", e1.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value(e1.getName()))
@@ -101,9 +115,15 @@ public class EntryControllerTests {
 
         mockMvc.perform(get("/entry/{id}", e2.getId()))
                 .andExpect(status().isNotFound());
-        mockMvc.perform(post("/entry")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(e2.toString()));
+
+        e2.setId(UUID.fromString(
+                mockMvc.perform(post("/entry")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(e2.toString()))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString()
+                        .replaceAll("\"", "")));
         mockMvc.perform(get("/entry/{id}", e2.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value(e2.getName()))
@@ -145,17 +165,28 @@ public class EntryControllerTests {
                 .andExpect(jsonPath("$", hasSize(0)));
         Entry e1 = new Entry("A", "A", (byte) 1, Instant.now()),
                 e2 = new Entry("B", "B", (byte) 2, Instant.now());
-        mockMvc.perform(post("/entry")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(e1.toString()));
-        mockMvc.perform(post("/entry")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(e2.toString()));
+        e1.setId(UUID.fromString(
+                mockMvc.perform(post("/entry")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(e1.toString()))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString()
+                        .replaceAll("\"", "")));
+        e2.setId(UUID.fromString(
+                mockMvc.perform(post("/entry")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(e2.toString()))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString()
+                        .replaceAll("\"", "")));
         mockMvc.perform(get("/entries"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$", hasSize(2)));
+
         mockMvc.perform(delete("/entry/{id}", e1.getId()))
                 .andExpect(status().isNoContent());
         mockMvc.perform(delete("/entry/{id}", e1.getId()))

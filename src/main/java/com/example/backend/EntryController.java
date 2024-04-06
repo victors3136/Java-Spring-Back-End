@@ -51,15 +51,15 @@ public class EntryController {
     }
 
     @PostMapping("/entry")
-    public ResponseEntity<?> postOne(@Valid @RequestBody Entry newEntry) {
+    public ResponseEntity<UUID> postOne(@Valid @RequestBody Entry newEntry) {
         if (newEntry.validationFails()) {
             return ResponseEntity.badRequest().build();
         }
-        if (list.stream().anyMatch(x -> x.getId() == newEntry.getId())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Entry already exists");
-        }
+        do {
+            newEntry.setId(UUID.randomUUID());
+        } while (list.stream().anyMatch(x -> x.getId() == newEntry.getId()));
         list.add(newEntry);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return new ResponseEntity<>(newEntry.getId(), HttpStatus.CREATED);
     }
 
     @DeleteMapping("/entry/{id}")
