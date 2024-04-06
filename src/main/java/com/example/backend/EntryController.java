@@ -13,6 +13,7 @@ import java.util.UUID;
 
 @RestController
 @Validated
+@CrossOrigin(origins = "*")
 public class EntryController {
     private final List<Entry> list = new ArrayList<>();
 
@@ -55,9 +56,9 @@ public class EntryController {
         if (newEntry.validationFails()) {
             return ResponseEntity.badRequest().build();
         }
-        do {
+        while (list.stream().anyMatch(x -> x.getId() == newEntry.getId())) {
             newEntry.setId(UUID.randomUUID());
-        } while (list.stream().anyMatch(x -> x.getId() == newEntry.getId()));
+        }
         list.add(newEntry);
         return new ResponseEntity<>(newEntry.getId(), HttpStatus.CREATED);
     }
