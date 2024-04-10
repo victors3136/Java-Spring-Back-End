@@ -56,9 +56,9 @@ public class EntryController {
         if (newEntry.validationFails()) {
             return ResponseEntity.badRequest().build();
         }
-        while (list.stream().anyMatch(x -> x.getId() == newEntry.getId())) {
+        do {
             newEntry.setId(UUID.randomUUID());
-        }
+        } while (list.stream().anyMatch(x -> x.getId() == newEntry.getId()));
         list.add(newEntry);
         return new ResponseEntity<>(newEntry.getId(), HttpStatus.CREATED);
     }
@@ -69,4 +69,12 @@ public class EntryController {
                 ResponseEntity.noContent().build() :
                 ResponseEntity.notFound().build();
     }
+
+    public boolean addEntry(Entry newEntry) {
+        if(list.stream().anyMatch(entry -> entry.getId().equals(newEntry.getId())))
+            return false;
+        list.add(newEntry);
+        return true;
+    }
 }
+
