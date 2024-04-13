@@ -1,5 +1,7 @@
 package com.example.backend;
 
+import com.example.backend.controller.EntryController;
+import com.example.backend.model.Entry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

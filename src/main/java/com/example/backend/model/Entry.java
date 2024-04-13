@@ -1,4 +1,4 @@
-package com.example.backend;
+package com.example.backend.model;
 
 import org.springframework.data.annotation.Id;
 
@@ -9,7 +9,8 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Max;
 import java.util.UUID;
 
-public class Entry {
+@SuppressWarnings("unused")
+public class Entry implements HasId {
     @Id
     private UUID id;
 
@@ -34,6 +35,7 @@ public class Entry {
         this.dueDate = dueDate;
     }
 
+    @Override
     public UUID getId() {
         return id;
     }
@@ -68,13 +70,6 @@ public class Entry {
 
     public void setDueDate(Instant dueDate) {
         this.dueDate = dueDate;
-    }
-
-    public void updateFields(Entry whereToTakeValuesFrom) {
-        this.setName(whereToTakeValuesFrom.getName());
-        this.setDescription(whereToTakeValuesFrom.getDescription());
-        this.setPriority(whereToTakeValuesFrom.getPriority());
-        this.setDueDate(whereToTakeValuesFrom.getDueDate());
     }
 
     @Override
