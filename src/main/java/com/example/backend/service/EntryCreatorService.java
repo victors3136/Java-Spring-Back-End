@@ -1,5 +1,7 @@
-package com.example.backend;
+package com.example.backend.service;
 
+import com.example.backend.controller.EntryController;
+import com.example.backend.model.Entry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -34,8 +36,7 @@ public class EntryCreatorService {
                 "None provided",
                 (byte) ((generator++) % 10 + 1),
                 Instant.now());
-        if (entryController.addEntry(newEntry))
-            return newEntry;
-        return null;
+        entryController.addEntry(newEntry);
+        return newEntry;
     }
 }
