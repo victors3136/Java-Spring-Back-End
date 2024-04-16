@@ -1,7 +1,7 @@
 package com.example.backend;
 
-import com.example.backend.controller.EntryController;
-import com.example.backend.model.Entry;
+import com.example.backend.controller.Controller;
+import com.example.backend.model.Task;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,15 +18,15 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(EntryController.class)
-public class EntryControllerTests {
+@WebMvcTest(Controller.class)
+public class TaskControllerTests {
 
     @Autowired
     private MockMvc mockMvc;
 
     @BeforeEach
     public void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new EntryController()).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(new Controller()).build();
     }
 
     @AfterEach
@@ -36,71 +36,71 @@ public class EntryControllerTests {
 
     @Test
     public void testPostEntry() throws Exception {
-        Entry correctEntry = new Entry("e", "", (byte) 5, Instant.now());
+        Task correctTask = new Task("e", "", (byte) 5, Instant.now());
         mockMvc.perform(post("/entry")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(correctEntry.toString()))
+                        .content(correctTask.toString()))
                 .andExpect(status().isCreated());
         mockMvc.perform(post("/entry")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(correctEntry.toString()))
+                        .content(correctTask.toString()))
                 .andExpect(status().isCreated());
-        Entry entryLackingName = new Entry("", "", (byte) 5, Instant.now());
+        Task taskLackingName = new Task("", "", (byte) 5, Instant.now());
         mockMvc.perform(post("/entry")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(entryLackingName.toString()))
+                        .content(taskLackingName.toString()))
                 .andExpect(status().isBadRequest());
-        Entry entryWithNullDesc = new Entry("", null, (byte) 5, Instant.now());
+        Task taskWithNullDesc = new Task("", null, (byte) 5, Instant.now());
         mockMvc.perform(post("/entry")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(entryWithNullDesc.toString()))
+                        .content(taskWithNullDesc.toString()))
                 .andExpect(status().isBadRequest());
-        Entry entryWithWrongPriority = new Entry("e", "", (byte) -1, Instant.now());
+        Task taskWithWrongPriority = new Task("e", "", (byte) -1, Instant.now());
         mockMvc.perform(post("/entry")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(entryWithWrongPriority.toString()))
+                        .content(taskWithWrongPriority.toString()))
                 .andExpect(status().isBadRequest());
-        Entry entryWithNullDueDate = new Entry("", "", (byte) 5, null);
+        Task taskWithNullDueDate = new Task("", "", (byte) 5, null);
         mockMvc.perform(post("/entry")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(entryWithNullDueDate.toString()))
+                        .content(taskWithNullDueDate.toString()))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     public void testPatchEntry() throws Exception {
-        Entry originalEntry = new Entry("Old Name", "Old Description", (byte) 7, Instant.now());
-        originalEntry.setId(UUID.fromString(
+        Task originalTask = new Task("Old Name", "Old Description", (byte) 7, Instant.now());
+        originalTask.setId(UUID.fromString(
                 mockMvc.perform(post("/entry")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(originalEntry.toString()))
+                                .content(originalTask.toString()))
                         .andReturn()
                         .getResponse()
                         .getContentAsString()
                         .replaceAll("\"", "")
         ));
-        Entry updatedEntry = new Entry("New Name", "New Description", (byte) 9, Instant.now());
+        Task updatedTask = new Task("New Name", "New Description", (byte) 9, Instant.now());
 
-        mockMvc.perform(patch("/entry/{id}", originalEntry.getId())
+        mockMvc.perform(patch("/entry/{id}", originalTask.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updatedEntry.toString()))
+                        .content(updatedTask.toString()))
                 .andExpect(status().isOk());
-        Entry badNameEntry = new Entry("", "New Description", (byte) 9, Instant.now());
-        mockMvc.perform(patch("/entry/{id}", originalEntry.getId())
+        Task badNameTask = new Task("", "New Description", (byte) 9, Instant.now());
+        mockMvc.perform(patch("/entry/{id}", originalTask.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(badNameEntry.toString()))
+                        .content(badNameTask.toString()))
                 .andExpect(status().isBadRequest());
-        Entry badPriorityEntry = new Entry("yaaa", "New Description", (byte) 19, Instant.now());
-        mockMvc.perform(patch("/entry/{id}", originalEntry.getId())
+        Task badPriorityTask = new Task("yaaa", "New Description", (byte) 19, Instant.now());
+        mockMvc.perform(patch("/entry/{id}", originalTask.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(badPriorityEntry.toString()))
+                        .content(badPriorityTask.toString()))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     public void testGetEntry() throws Exception {
-        Entry e1 = new Entry("Old Name", "Old Description", (byte) 7, Instant.now()),
-                e2 = new Entry("aaa", "new Desc", (byte) 1, Instant.now());
+        Task e1 = new Task("Old Name", "Old Description", (byte) 7, Instant.now()),
+                e2 = new Task("aaa", "new Desc", (byte) 1, Instant.now());
 
         e1.setId(UUID.fromString(
                 mockMvc.perform(post("/entry")
@@ -139,8 +139,8 @@ public class EntryControllerTests {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$", hasSize(0)));
-        Entry e1 = new Entry("A", "A", (byte) 1, Instant.now()),
-                e2 = new Entry("B", "B", (byte) 2, Instant.now());
+        Task e1 = new Task("A", "A", (byte) 1, Instant.now()),
+                e2 = new Task("B", "B", (byte) 2, Instant.now());
         mockMvc.perform(post("/entry")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(e1.toString()));
@@ -165,8 +165,8 @@ public class EntryControllerTests {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$", hasSize(0)));
-        Entry e1 = new Entry("A", "A", (byte) 1, Instant.now()),
-                e2 = new Entry("B", "B", (byte) 2, Instant.now());
+        Task e1 = new Task("A", "A", (byte) 1, Instant.now()),
+                e2 = new Task("B", "B", (byte) 2, Instant.now());
         e1.setId(UUID.fromString(
                 mockMvc.perform(post("/entry")
                                 .contentType(MediaType.APPLICATION_JSON)

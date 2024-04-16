@@ -1,6 +1,6 @@
 package com.example.backend.controller;
 
-import com.example.backend.model.Entry;
+import com.example.backend.model.Task;
 import com.example.backend.repository.InMemoryRepository;
 import com.example.backend.repository.Repository;
 import org.springframework.http.HttpStatus;
@@ -14,12 +14,12 @@ import java.util.*;
 @RestController
 @Validated
 @CrossOrigin(origins = "*")
-public class EntryController {
-    private final Repository<Entry> repository = new InMemoryRepository<>();
+public class Controller {
+    private final Repository<Task> repository = new InMemoryRepository<>();
 
     @GetMapping("/entry/{id}")
     public ResponseEntity<?> getOne(@PathVariable UUID id) {
-        Optional<Entry> entry = repository.getById(id);
+        Optional<Task> entry = repository.getById(id);
         return entry.isPresent() ? ResponseEntity.ok(entry.get()) :
                 ResponseEntity
                         .status(HttpStatus.NOT_FOUND)
@@ -27,26 +27,26 @@ public class EntryController {
     }
 
     @GetMapping("/entries")
-    public ResponseEntity<List<Entry>> getAll() {
+    public ResponseEntity<List<Task>> getAll() {
         return ResponseEntity.ok(repository.getAll());
     }
 
     @PatchMapping("/entry/{id}")
-    public ResponseEntity<?> patchOne(@PathVariable UUID id, @Valid @RequestBody Entry updatedEntry) {
-        if (updatedEntry.validationFails()) {
+    public ResponseEntity<?> patchOne(@PathVariable UUID id, @Valid @RequestBody Task updatedTask) {
+        if (updatedTask.validationFails()) {
             return ResponseEntity.badRequest().build();
         }
-        return repository.patch(id, updatedEntry) ?
-                ResponseEntity.ok(updatedEntry)
+        return repository.patch(id, updatedTask) ?
+                ResponseEntity.ok(updatedTask)
                 : ResponseEntity.notFound().build();
     }
 
     @PostMapping("/entry")
-    public ResponseEntity<UUID> postOne(@Valid @RequestBody Entry newEntry) {
-        if (newEntry.validationFails()) {
+    public ResponseEntity<UUID> postOne(@Valid @RequestBody Task newTask) {
+        if (newTask.validationFails()) {
             return ResponseEntity.badRequest().build();
         }
-        UUID newID = repository.post(newEntry);
+        UUID newID = repository.post(newTask);
         return new ResponseEntity<>(newID, HttpStatus.CREATED);
     }
 
@@ -57,8 +57,8 @@ public class EntryController {
                 : ResponseEntity.notFound().build();
     }
 
-    public void addEntry(Entry newEntry) {
-        repository.post(newEntry);
+    public void addEntry(Task newTask) {
+        repository.post(newTask);
     }
 }
 

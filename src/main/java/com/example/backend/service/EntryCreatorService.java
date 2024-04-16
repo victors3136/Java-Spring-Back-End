@@ -1,7 +1,7 @@
 package com.example.backend.service;
 
-import com.example.backend.controller.EntryController;
-import com.example.backend.model.Entry;
+import com.example.backend.controller.Controller;
+import com.example.backend.model.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -12,7 +12,7 @@ import java.time.Instant;
 @CrossOrigin
 public class EntryCreatorService {
     @Autowired
-    private EntryController entryController;
+    private Controller controller;
 
     private long generator = 0;
     private static final String[] subjects = {
@@ -30,13 +30,13 @@ public class EntryCreatorService {
             "Lab"
     };
 
-    public Entry createEntity() {
-        Entry newEntry = new Entry(
+    public Task createEntity() {
+        Task newTask = new Task(
                 activities[(int) (generator % activities.length)] + " @ " + subjects[(int) (generator % subjects.length)],
                 "None provided",
                 (byte) ((generator++) % 10 + 1),
                 Instant.now());
-        entryController.addEntry(newEntry);
-        return newEntry;
+        controller.addEntry(newTask);
+        return newTask;
     }
 }

@@ -10,7 +10,7 @@ import javax.validation.constraints.Max;
 import java.util.UUID;
 
 @SuppressWarnings("unused")
-public class Entry implements HasId {
+public class Task implements HasId {
     @Id
     private UUID id;
 
@@ -27,7 +27,7 @@ public class Entry implements HasId {
     @NotNull(message = "Due date must not be null")
     private Instant dueDate;
 
-    public Entry(String name, String description, byte priority, Instant dueDate) {
+    public Task(String name, String description, byte priority, Instant dueDate) {
         this.id = UUID.randomUUID();
         this.name = name;
         this.description = description;
@@ -80,8 +80,8 @@ public class Entry implements HasId {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Entry entry)) return false;
-        return getId() == entry.getId();
+        if (!(o instanceof Task task)) return false;
+        return getId() == task.getId();
     }
 
     public boolean validationFails() {
