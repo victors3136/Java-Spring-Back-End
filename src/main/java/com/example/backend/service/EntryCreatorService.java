@@ -1,7 +1,7 @@
 package com.example.backend.service;
 
 import com.example.backend.controller.Controller;
-import com.example.backend.model.Task;
+import com.example.backend.model.Tasks;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -30,13 +30,13 @@ public class EntryCreatorService {
             "Lab"
     };
 
-    public Task createEntity() {
-        Task newTask = new Task(
+    public Tasks createEntity() {
+        Tasks newTask = new Tasks(
                 activities[(int) (generator % activities.length)] + " @ " + subjects[(int) (generator % subjects.length)],
                 "None provided",
                 (byte) ((generator++) % 10 + 1),
                 Instant.now());
-        controller.addEntry(newTask);
+        controller.addTask(newTask);
         return newTask;
     }
 }
