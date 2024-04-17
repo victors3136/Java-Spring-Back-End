@@ -3,7 +3,6 @@ package com.example.backend.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 import javax.validation.constraints.Max;
@@ -16,10 +15,10 @@ import java.util.UUID;
 
 @SuppressWarnings("unused")
 @Entity
-public class Tasks implements HasId, Serializable {
+public class Task implements HasId, Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue
     private UUID id;
 
     @NotBlank(message = "Name must not be blank")
@@ -35,7 +34,7 @@ public class Tasks implements HasId, Serializable {
     @NotNull(message = "Due date must not be null")
     private Instant dueDate;
 
-    public Tasks(String name, String description, byte priority, Instant dueDate) {
+    public Task(String name, String description, byte priority, Instant dueDate) {
         this.id = UUID.randomUUID();
         this.name = name;
         this.description = description;
@@ -43,7 +42,7 @@ public class Tasks implements HasId, Serializable {
         this.dueDate = dueDate;
     }
 
-    public Tasks() {
+    public Task() {
 
     }
 
@@ -97,7 +96,7 @@ public class Tasks implements HasId, Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Tasks task)) return false;
+        if (!(o instanceof Task task)) return false;
         return getId() == task.getId();
     }
 

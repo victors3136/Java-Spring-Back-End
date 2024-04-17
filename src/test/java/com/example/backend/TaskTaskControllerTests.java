@@ -1,7 +1,7 @@
 package com.example.backend;
 
-import com.example.backend.controller.Controller;
-import com.example.backend.model.Tasks;
+import com.example.backend.controller.TaskController;
+import com.example.backend.model.Task;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -17,15 +17,15 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(Controller.class)
-public class TasksControllerTests {
+@WebMvcTest(TaskController.class)
+public class TaskTaskControllerTests {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
     public void postTask_PostingCorrectTask_ReturnsIsCreated() {
-        Tasks correctTask = new Tasks("e", "", (byte) 5, Instant.now());
+        Task correctTask = new Task("e", "", (byte) 5, Instant.now());
         try {
             var x = post("/task")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -40,7 +40,7 @@ public class TasksControllerTests {
 
     @Test
     public void postTask_PostingSameTaskTwice_ReturnsIsCreated() {
-        Tasks correctTask = new Tasks("e", "", (byte) 5, Instant.now());
+        Task correctTask = new Task("e", "", (byte) 5, Instant.now());
         try {
             mockMvc.perform(post("/task")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -57,7 +57,7 @@ public class TasksControllerTests {
 
     @Test
     public void postTask_PostingTaskWithNoName_ReturnsBadRequest() {
-        Tasks taskLackingName = new Tasks("", "", (byte) 5, Instant.now());
+        Task taskLackingName = new Task("", "", (byte) 5, Instant.now());
         try {
             mockMvc.perform(post("/task")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -71,7 +71,7 @@ public class TasksControllerTests {
 
     @Test
     public void postTask_PostingTaskWithNullDescription_ReturnsBadRequest() {
-        Tasks taskWithNullDesc = new Tasks("", null, (byte) 5, Instant.now());
+        Task taskWithNullDesc = new Task("", null, (byte) 5, Instant.now());
         try {
             mockMvc.perform(post("/task")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -84,7 +84,7 @@ public class TasksControllerTests {
 
     @Test
     public void postTask_PostingTaskWithOutOfRangePriority_ReturnsBadRequest() {
-        Tasks taskWithWrongPriority = new Tasks("e", "", (byte) -1, Instant.now());
+        Task taskWithWrongPriority = new Task("e", "", (byte) -1, Instant.now());
         try {
             mockMvc.perform(post("/task")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -97,7 +97,7 @@ public class TasksControllerTests {
 
     @Test
     public void postTask_PostingTaskWithNullDueDate_ReturnsBadRequest() {
-        Tasks taskWithNullDueDate = new Tasks("", "", (byte) 5, null);
+        Task taskWithNullDueDate = new Task("", "", (byte) 5, null);
         try {
             mockMvc.perform(post("/task")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -110,7 +110,7 @@ public class TasksControllerTests {
 
     @Test
     public void patchTask_PatchingWithValidTask_ReturnsOk() {
-        Tasks originalTask = new Tasks("Old Name", "Old Description", (byte) 7, Instant.now());
+        Task originalTask = new Task("Old Name", "Old Description", (byte) 7, Instant.now());
         /// Update the id of the task to the value returned by the server
         try {
             originalTask.setId(UUID.fromString(
@@ -125,7 +125,7 @@ public class TasksControllerTests {
         } catch (Exception e) {
             fail();
         }
-        Tasks updatedTask = new Tasks("New Name", "New Description", (byte) 9, Instant.now());
+        Task updatedTask = new Task("New Name", "New Description", (byte) 9, Instant.now());
 
         try {
             mockMvc.perform(patch("/task/{id}", originalTask.getId())
@@ -139,7 +139,7 @@ public class TasksControllerTests {
 
     @Test
     public void patchTask_PatchingWithInvalidTaskName_ReturnsBadRequest() {
-        Tasks originalTask = new Tasks("Old Name", "Old Description", (byte) 7, Instant.now());
+        Task originalTask = new Task("Old Name", "Old Description", (byte) 7, Instant.now());
         /// Update the id of the task to the value returned by the server
         try {
             originalTask.setId(UUID.fromString(
@@ -154,7 +154,7 @@ public class TasksControllerTests {
         } catch (Exception e) {
             fail();
         }
-        Tasks badNameTask = new Tasks("", "New Description", (byte) 9, Instant.now());
+        Task badNameTask = new Task("", "New Description", (byte) 9, Instant.now());
         try {
             mockMvc.perform(patch("/task/{id}", originalTask.getId())
                             .contentType(MediaType.APPLICATION_JSON)
@@ -167,7 +167,7 @@ public class TasksControllerTests {
 
     @Test
     public void patchTask_PatchingWithInvalidTaskPriority_ReturnsBadRequest() {
-        Tasks originalTask = new Tasks("Old Name", "Old Description", (byte) 7, Instant.now());
+        Task originalTask = new Task("Old Name", "Old Description", (byte) 7, Instant.now());
         /// Update the id of the task to the value returned by the server
         try {
             originalTask.setId(UUID.fromString(
@@ -182,7 +182,7 @@ public class TasksControllerTests {
         } catch (Exception e) {
             fail();
         }
-        Tasks badPriorityTask = new Tasks("yaaa", "New Description", (byte) 19, Instant.now());
+        Task badPriorityTask = new Task("yaaa", "New Description", (byte) 19, Instant.now());
         try {
             mockMvc.perform(patch("/task/{id}", originalTask.getId())
                             .contentType(MediaType.APPLICATION_JSON)
@@ -195,7 +195,7 @@ public class TasksControllerTests {
 
     @Test
     public void getTask_TaskExists_ReturnsOkAndTaskAsJSON() {
-        Tasks task = new Tasks("Old Name", "Old Description", (byte) 7, Instant.now());
+        Task task = new Task("Old Name", "Old Description", (byte) 7, Instant.now());
         try {
             task.setId(UUID.fromString(
                     mockMvc.perform(post("/task")
@@ -220,7 +220,7 @@ public class TasksControllerTests {
 
     @Test
     public void getTask_TaskDoesNotExist_ReturnsNotFound() {
-        Tasks task = new Tasks("aaa", "new Desc", (byte) 1, Instant.now());
+        Task task = new Task("aaa", "new Desc", (byte) 1, Instant.now());
         try {
             mockMvc.perform(get("/task/{id}", task.getId()))
                     .andExpect(status().isNotFound());
@@ -245,8 +245,8 @@ public class TasksControllerTests {
     @Test
     public void getAll_StorageWith2Items_ReturnsJSONArrayOfSize2WithCorrectElementsInAnyOrder() {
         ///Setup
-        Tasks t1 = new Tasks("A", "A", (byte) 1, Instant.now()),
-                t2 = new Tasks("B", "B", (byte) 2, Instant.now());
+        Task t1 = new Task("A", "A", (byte) 1, Instant.now()),
+                t2 = new Task("B", "B", (byte) 2, Instant.now());
         try {
             mockMvc.perform(post("/task")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -277,7 +277,7 @@ public class TasksControllerTests {
 
     @Test
     public void deleteEntry_DeleteATaskPresentInStorage_ReturnsNoContent() {
-        Tasks task = new Tasks("A", "A", (byte) 1, Instant.now());
+        Task task = new Task("A", "A", (byte) 1, Instant.now());
         try {
             task.setId(UUID.fromString(
                     mockMvc.perform(post("/task")
@@ -301,7 +301,7 @@ public class TasksControllerTests {
 
     @Test
     public void deleteEntry_DeleteATaskPresentInStorageTwice_ReturnsNotFound() {
-        Tasks task = new Tasks("A", "A", (byte) 1, Instant.now());
+        Task task = new Task("A", "A", (byte) 1, Instant.now());
         try {
             task.setId(UUID.fromString(
                     mockMvc.perform(post("/task")
@@ -330,7 +330,7 @@ public class TasksControllerTests {
 
     @Test
     public void deleteEntry_DeleteATaskPresentInStorage_DecreasesNumberOfTasks() {
-        Tasks task = new Tasks("A", "A", (byte) 1, Instant.now());
+        Task task = new Task("A", "A", (byte) 1, Instant.now());
         try {
             task.setId(UUID.fromString(
                     mockMvc.perform(post("/task")
@@ -370,7 +370,7 @@ public class TasksControllerTests {
 
     @Test
     public void deleteEntry_DeleteATaskNotPresentInStorage_ReturnsNotFound() {
-        Tasks task = new Tasks("A", "A", (byte) 1, Instant.now());
+        Task task = new Task("A", "A", (byte) 1, Instant.now());
         try {
             mockMvc.perform(delete("/task/{id}", task.getId()))
                     .andExpect(status().isNotFound());

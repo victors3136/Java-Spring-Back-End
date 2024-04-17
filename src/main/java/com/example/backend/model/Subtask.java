@@ -2,7 +2,6 @@ package com.example.backend.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 import javax.validation.constraints.NotBlank;
@@ -13,7 +12,7 @@ import java.util.UUID;
 public class Subtask implements HasId, Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue
     private UUID id;
     @NotBlank(message = "Subject must not be blank")
     private String subject;

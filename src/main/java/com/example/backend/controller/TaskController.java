@@ -1,7 +1,7 @@
 package com.example.backend.controller;
 
 import com.example.backend.model.Subtask;
-import com.example.backend.model.Tasks;
+import com.example.backend.model.Task;
 import com.example.backend.repository.SubtaskRepository;
 import com.example.backend.repository.TaskRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -12,26 +12,24 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
 @Validated
 @CrossOrigin(origins = "*")
-public class Controller {
+public class TaskController {
     private final TaskRepository taskRepository;
     private final SubtaskRepository subtaskRepository;
 
     @Autowired
-    public Controller(TaskRepository tasks, SubtaskRepository subtasks) {
+    public TaskController(TaskRepository tasks, SubtaskRepository subtasks) {
         taskRepository = tasks;
         subtaskRepository = subtasks;
     }
 
     @GetMapping("/task/{id}")
     public ResponseEntity<?> getOneTask(@PathVariable UUID id) {
-        Optional<Tasks> entry = Optional.of(taskRepository.getReferenceById(id));
+        Optional<Task> entry = Optional.of(taskRepository.getReferenceById(id));
         return entry.isPresent() ?
                 ResponseEntity.ok(entry.get())
                 : ResponseEntity
@@ -50,7 +48,7 @@ public class Controller {
     }
 
     @GetMapping("/task/all")
-    public ResponseEntity<List<Tasks>> getAllTasks() {
+    public ResponseEntity<List<Task>> getAllTasks() {
         return ResponseEntity.ok(taskRepository.findAll());
     }
 
@@ -60,18 +58,18 @@ public class Controller {
     }
 
     @PatchMapping("/task/{id}")
-    public ResponseEntity<?> patchOneTask(@PathVariable UUID id, @Valid @RequestBody Tasks updatedTask) {
+    public ResponseEntity<?> patchOneTask(@PathVariable UUID id, @Valid @RequestBody Task updatedTask) {
         if (updatedTask.validationFails()) {
             return ResponseEntity.badRequest().build();
         }
-        Optional<Tasks> existingTaskOptional = taskRepository.findById(id);
+        Optional<Task> existingTaskOptional = taskRepository.findById(id);
         if (existingTaskOptional.isPresent()) {
-            Tasks existingTask = existingTaskOptional.get();
+            Task existingTask = existingTaskOptional.get();
             existingTask.setName(updatedTask.getName());
             existingTask.setDescription(updatedTask.getDescription());
             existingTask.setPriority(updatedTask.getPriority());
             existingTask.setDueDate(updatedTask.getDueDate());
-            Tasks savedTask = taskRepository.save(existingTask);
+            Task savedTask = taskRepository.save(existingTask);
             return ResponseEntity.ok(savedTask);
         } else {
             return ResponseEntity.notFound().build();
@@ -101,11 +99,11 @@ public class Controller {
     }
 
     @PostMapping("/task")
-    public ResponseEntity<UUID> postOneTask(@Valid @RequestBody Tasks newTask) {
+    public ResponseEntity<UUID> postOneTask(@Valid @RequestBody Task newTask) {
         if (newTask.validationFails()) {
             return ResponseEntity.badRequest().build();
         }
-        Tasks savedTask = taskRepository.save(newTask);
+        var savedTask = taskRepository.save(newTask);
         return new ResponseEntity<>(savedTask.getId(), HttpStatus.CREATED);
     }
 
@@ -119,13 +117,15 @@ public class Controller {
         } catch (EntityNotFoundException _discard) {
             return ResponseEntity.badRequest().build();
         }
-        Subtask savedSubtask = subtaskRepository.save(newSubtask);
+        var savedSubtask = subtaskRepository.save(newSubtask);
         return new ResponseEntity<>(savedSubtask.getId(), HttpStatus.CREATED);
     }
 
     @DeleteMapping("/task/{id}")
     public ResponseEntity<?> deleteOneTask(@PathVariable UUID id) {
         if (taskRepository.existsById(id)) {
+            List<Subtask> subtasks = subtaskRepository.findByTask(id);
+            subtaskRepository.deleteAll(subtasks);
             taskRepository.deleteById(id);
             return ResponseEntity.noContent().build();
         } else {
@@ -149,13 +149,26 @@ public class Controller {
         return ResponseEntity.ok(subtasks);
     }
 
-    public void addTask(Tasks newTask) {
-        taskRepository.save(newTask);
+    @GetMapping("task")
+    public ResponseEntity<List<Task>> getSortedByPriority(@RequestParam(value = "priority", defaultValue = "DES") String pathVar) {
+        String option = pathVar.substring(0, 3).toUpperCase();
+        if (!Objects.equals(option, "DES") && !Objects.equals(option, "ASC")) {
+            return ResponseEntity.badRequest().build();
+        }
+        Comparator<Task> criterion = option.equals("ASC") ?
+                Comparator.comparingInt(Task::getPriority)
+                : (t1, t2) -> t2.getPriority() - t1.getPriority();
+        return ResponseEntity.ok(taskRepository.findAll().stream()
+                .sorted(criterion).toList());
+    }
+
+    public Task addTask(Task newTask) {
+        return taskRepository.save(newTask);
     }
 
     @SuppressWarnings("unused")
-    public void addSubtask(Subtask newSubtask) {
-        subtaskRepository.save(newSubtask);
+    public Subtask addSubtask(Subtask newSubtask) {
+        return subtaskRepository.save(newSubtask);
     }
 
     public TaskRepository getTasksRepository() {

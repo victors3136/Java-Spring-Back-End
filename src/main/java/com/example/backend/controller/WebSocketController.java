@@ -1,7 +1,7 @@
 package com.example.backend.controller;
 
-import com.example.backend.service.EntryCreatorService;
-import com.example.backend.model.Tasks;
+import com.example.backend.service.TaskCreatorService;
+import com.example.backend.model.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,11 +16,12 @@ public class WebSocketController {
     private SimpMessagingTemplate template;
 
     @Autowired
-    private EntryCreatorService entryCreatorService;
+    private TaskCreatorService taskCreatorService;
 
     @Scheduled(fixedDelay = 10000, initialDelay = 5000)
     public void sendNewEntry() {
-        Tasks newTask = entryCreatorService.createEntity();
+        Task newTask = taskCreatorService.createEntity();
+
         if (newTask != null)
             template.convertAndSend("/topic/newEntry", newTask);
     }
