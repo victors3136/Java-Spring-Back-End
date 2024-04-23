@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Random;
 
 @Service
 @CrossOrigin
@@ -29,13 +31,14 @@ public class TaskCreatorService {
             "Lecture",
             "Lab"
     };
+    private static final Random random = new Random(Instant.now().toEpochMilli());
 
     public Task createEntity() {
         Task newTask = new Task(
                 activities[(int) (generator % activities.length)] + " @ " + subjects[(int) (generator % subjects.length)],
                 "None provided",
-                (byte) ((generator++) % 10 + 1),
-                Instant.now());
+                (byte) (generator % 10 + 1),
+                Instant.now().plus((((generator++) % 10) + (random.nextInt() % 10) - 5), ChronoUnit.DAYS));
         return taskController.addTask(newTask);
     }
 }

@@ -18,7 +18,7 @@ public class WebSocketController {
     @Autowired
     private TaskCreatorService taskCreatorService;
 
-    @Scheduled(fixedDelay = 10000, initialDelay = 5000)
+    @Scheduled(fixedDelay = 30_000, initialDelay = 5000)
     public void sendNewEntry() {
         Task newTask = taskCreatorService.createEntity();
 

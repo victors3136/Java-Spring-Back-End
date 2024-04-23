@@ -66,9 +66,9 @@ public class Subtask implements HasId, Serializable {
     }
 
     public boolean validationFails() {
-        return subject != null
-                && !subject.equals("")
-                && id != null
-                && task != null;
+        return subject == null
+                || subject.equals("")
+                || id == null
+                || task == null;
     }
 }
