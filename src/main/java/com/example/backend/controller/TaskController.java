@@ -173,9 +173,8 @@ public class TaskController {
         return taskRepository.save(newTask);
     }
 
-    @SuppressWarnings("unused")
-    public Subtask addSubtask(Subtask newSubtask) {
-        return subtaskRepository.save(newSubtask);
+    public void addSubtask(Subtask newSubtask) {
+        subtaskRepository.save(newSubtask);
     }
 
     public TaskRepository getTasksRepository() {

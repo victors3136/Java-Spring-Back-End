@@ -21,16 +21,15 @@ public class SubtaskCreatorService {
             "Read that again",
             "Think about this"};
 
-    @SuppressWarnings("unused")
-    public Subtask createEntity() {
+    public void createEntity() {
         List<Task> tasksList = taskController.getTasksRepository().findAll();
         if (tasksList.isEmpty()) {
-            return null;
+            return;
         }
         Subtask newTask = new Subtask(
                 subjects[(int) (generator % subjects.length)],
                 tasksList.get((int) ((generator++) % tasksList.size())).getId()
         );
-        return taskController.addSubtask(newTask);
+        taskController.addSubtask(newTask);
     }
 }
