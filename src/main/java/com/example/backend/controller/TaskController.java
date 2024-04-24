@@ -37,7 +37,10 @@ public class TaskController {
                 .status(HttpStatus.NOT_FOUND)
                 .body("Invalid ID -- " + id);
     }
-
+    @GetMapping("/task/count/{id}")
+    public ResponseEntity<?> getSubtaskCount(@PathVariable UUID id) {
+        return ResponseEntity.ok(taskRepository.countSubtasksByTaskId(id));
+    }
     @GetMapping("/subtask/{id}")
     public ResponseEntity<?> getOneSubtask(@PathVariable UUID id) {
         Optional<Subtask> entry = Optional.of(subtaskRepository.getReferenceById(id));

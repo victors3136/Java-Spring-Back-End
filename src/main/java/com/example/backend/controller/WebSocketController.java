@@ -22,7 +22,7 @@ public class WebSocketController {
     @Autowired
     private SubtaskCreatorService subtaskCreatorService;
 
-    @Scheduled(fixedDelay = 100, initialDelay = 5_000)
+    @Scheduled(fixedDelay = 100, initialDelay = 1_000)
     public void sendNewEntry() {
         Task newTask = taskCreatorService.createEntity();
 
@@ -30,7 +30,7 @@ public class WebSocketController {
             template.convertAndSend("/topic/newEntry", newTask);
     }
 
-    @Scheduled(fixedDelay = 500, initialDelay = 10_000)
+    @Scheduled(fixedDelay = 10, initialDelay = 1_000)
     public void createSubentry() {
         subtaskCreatorService.createEntity();
     }
