@@ -7,6 +7,8 @@ import com.example.backend.repository.TaskRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -37,10 +39,12 @@ public class TaskController {
                 .status(HttpStatus.NOT_FOUND)
                 .body("Invalid ID -- " + id);
     }
+
     @GetMapping("/task/count/{id}")
     public ResponseEntity<?> getSubtaskCount(@PathVariable UUID id) {
         return ResponseEntity.ok(taskRepository.countSubtasksByTaskId(id));
     }
+
     @GetMapping("/subtask/{id}")
     public ResponseEntity<?> getOneSubtask(@PathVariable UUID id) {
         Optional<Subtask> entry = Optional.of(subtaskRepository.getReferenceById(id));
@@ -54,6 +58,15 @@ public class TaskController {
     @GetMapping("/task/all")
     public ResponseEntity<List<Task>> getAllTasks() {
         return ResponseEntity.ok(taskRepository.findAll());
+    }
+
+    @GetMapping("/task/all/{id}")
+    public ResponseEntity<Page<Task>> getTaskPage(@PathVariable int id) {
+        if (id < 0) {
+            return ResponseEntity.badRequest().build();
+        }
+        Page<Task> taskPage = taskRepository.findAll(PageRequest.of(id, 25));
+        return ResponseEntity.ok(taskPage);
     }
 
     @GetMapping("/subtask/all")
