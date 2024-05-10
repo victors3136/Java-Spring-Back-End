@@ -1,6 +1,6 @@
 package com.example.backend.service;
 
-import com.example.backend.controller.TaskController;
+import com.example.backend.controller.SubtaskController;
 import com.example.backend.model.Subtask;
 import com.example.backend.model.Task;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +14,7 @@ import java.util.List;
 @CrossOrigin
 public class SubtaskCreatorService {
     @Autowired
-    private TaskController taskController;
+    private SubtaskController subtaskController;
     private long generator = 0;
     private static final String[] subjects = {
             "Stop procrastinating",
@@ -22,7 +22,7 @@ public class SubtaskCreatorService {
             "Think about this"};
 
     public void createEntity() {
-        List<Task> tasksList = taskController.getTasksRepository().findAll();
+        List<Task> tasksList = subtaskController.getTasksRepository().findAll();
         if (tasksList.isEmpty()) {
             return;
         }
@@ -30,6 +30,6 @@ public class SubtaskCreatorService {
                 subjects[(int) (generator % subjects.length)],
                 tasksList.get((int) ((generator++) % tasksList.size())).getId()
         );
-        taskController.addSubtask(newTask);
+        subtaskController.addSubtask(newTask);
     }
 }
