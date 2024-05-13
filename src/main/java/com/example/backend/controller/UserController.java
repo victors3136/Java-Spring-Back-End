@@ -2,7 +2,7 @@ package com.example.backend.controller;
 
 import com.example.backend.model.User;
 import com.example.backend.repository.UserRepository;
-import com.example.backend.service.JSONWebTokenGenerationService;
+import com.example.backend.service.JSONWebTokenGeneratorService;
 import com.example.backend.user_requests.ChangePasswordRequest;
 import com.example.backend.user_requests.LoginRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,17 +21,21 @@ import java.util.Optional;
 public class UserController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JSONWebTokenGenerationService jsonWebTokenGenerationService;
+    private final JSONWebTokenGeneratorService jwtTokenGeneratorService;
 
     @Autowired
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, JSONWebTokenGenerationService jsonWebTokenGenerationService) {
+    public UserController(UserRepository userRepository,
+                          PasswordEncoder passwordEncoder,
+                          JSONWebTokenGeneratorService jwtTokenGeneratorService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jsonWebTokenGenerationService = jsonWebTokenGenerationService;
+        this.jwtTokenGeneratorService = jwtTokenGeneratorService;
     }
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@Validated @RequestBody User user) {
+        System.out.println("POST /user/register");
+        System.out.println(user);
         Optional<User> optionalUser = userRepository.findByUsername(user.getUsername());
         if (optionalUser.isPresent()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Username already taken");
@@ -43,6 +47,8 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@Validated @RequestBody LoginRequest loginRequest) {
+        System.out.println("POST /user/login");
+        System.out.println(loginRequest);
         Optional<User> optionalUser = userRepository.findByUsername(loginRequest.username());
         if (optionalUser.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
@@ -53,12 +59,14 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
         }
 
-        String jsonWebToken = jsonWebTokenGenerationService.generateToken(user.getUsername());
+        String jsonWebToken = jwtTokenGeneratorService.generateJWT(user);
         return ResponseEntity.ok().body(jsonWebToken);
     }
 
-    @PutMapping("/change_password")
+    @PatchMapping("/change_password")
     public ResponseEntity<String> changePassword(@RequestBody ChangePasswordRequest changePasswordRequest) {
+        System.out.println("PATCH user/change_password");
+        System.out.println(changePasswordRequest);
         String username = changePasswordRequest.username();
         String oldPassword = changePasswordRequest.oldPassword();
         String newPassword = changePasswordRequest.newPassword();
