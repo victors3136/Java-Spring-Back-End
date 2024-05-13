@@ -12,7 +12,10 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.*;
+import java.text.MessageFormat;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @Validated
@@ -28,19 +31,19 @@ public class TaskController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getOneTask(@PathVariable UUID id) {
-        System.out.println("GET /task/" + id);
+        System.out.println(MessageFormat.format("GET /task/{0}", id));
         Optional<Task> entry = taskRepository.findById(id);
-        return entry.isPresent() ?
-                ResponseEntity.ok(entry.get())
+        return entry.isPresent()
+                ? ResponseEntity.ok(entry.get())
                 : ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body("Invalid ID -- " + id);
+                .body(MessageFormat.format("Invalid ID -- {0}", id));
     }
 
     @GetMapping("/count/{id}")
     public ResponseEntity<?> getSubtaskCount(@PathVariable UUID id) {
-        System.out.println("GET /task/count/" + id);
-        return ResponseEntity.ok(taskRepository.countSubtasksByTaskId(id));
+        System.out.println(MessageFormat.format("GET /task/count/{0}", id));
+        return ResponseEntity.ok(taskRepository.countSubtasksByTask(id));
     }
 
     @GetMapping("/all")
@@ -51,7 +54,7 @@ public class TaskController {
 
     @GetMapping("/all/{id}")
     public ResponseEntity<Page<Task>> getTaskPage(@PathVariable int id) {
-        System.out.println("GET /task/all/" + id);
+        System.out.println(MessageFormat.format("GET /task/all/{0}", id));
         if (id < 0) {
             return ResponseEntity.badRequest().build();
         }
@@ -62,27 +65,33 @@ public class TaskController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<?> patchOneTask(@PathVariable UUID id, @Valid @RequestBody @NotNull Task updatedTask) {
-        System.out.println("PATCH /task/" + id);
+        System.out.println(MessageFormat.format("PATCH /task/{0}", id));
+        System.out.println(MessageFormat.format("Body: {0}", updatedTask));
+
         if (updatedTask.validationFails()) {
             return ResponseEntity.badRequest().build();
         }
+
         Optional<Task> existingTaskOptional = taskRepository.findById(id);
-        if (existingTaskOptional.isPresent()) {
-            Task existingTask = existingTaskOptional.get();
-            existingTask.setName(updatedTask.getName());
-            existingTask.setDescription(updatedTask.getDescription());
-            existingTask.setPriority(updatedTask.getPriority());
-            existingTask.setDueDate(updatedTask.getDueDate());
-            Task savedTask = taskRepository.save(existingTask);
-            return ResponseEntity.ok(savedTask);
+        if (existingTaskOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
+
+        Task existingTask = existingTaskOptional.get();
+        existingTask.setName(updatedTask.getName());
+        existingTask.setDescription(updatedTask.getDescription());
+        existingTask.setPriority(updatedTask.getPriority());
+        existingTask.setDueDate(updatedTask.getDueDate());
+        Task savedTask = taskRepository.save(existingTask);
+
+        return ResponseEntity.ok(savedTask);
     }
 
 
     @PostMapping("")
     public ResponseEntity<UUID> postOneTask(@Valid @RequestBody @NotNull Task newTask) {
         System.out.println("POST /task");
+        System.out.println(MessageFormat.format("Body: {0}", newTask));
         if (newTask.validationFails()) {
             return ResponseEntity.badRequest().build();
         }
@@ -93,7 +102,7 @@ public class TaskController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOneTask(@PathVariable UUID id) {
-        System.out.println("DELETE /task/" + id);
+        System.out.println(MessageFormat.format("DELETE /task/{0}", id));
         if (taskRepository.existsById(id)) {
             taskRepository.deleteById(id);
             return ResponseEntity.noContent().build();
@@ -104,6 +113,7 @@ public class TaskController {
     @DeleteMapping("/batch")
     public ResponseEntity<?> deleteTasksBatch(@RequestBody @NotNull List<UUID> ids) {
         System.out.println("DELETE /task/batch");
+        System.out.println(MessageFormat.format("Body: [{0}]", ids.stream().map(UUID::toString).reduce("", (s1, s2) -> s1 + ", " + s2)));
         List<Task> tasksToDelete = taskRepository.findAllById(ids);
         if (!tasksToDelete.isEmpty()) {
             taskRepository.deleteAll(tasksToDelete);
@@ -112,23 +122,12 @@ public class TaskController {
         return ResponseEntity.notFound().build();
     }
 
-
-    @GetMapping("")
-    public ResponseEntity<List<Task>> getSortedByPriority(@RequestParam(value = "priority", defaultValue = "DES") @NotNull String pathVar) {
-        System.out.println("GET /task?priority=" + pathVar);
-        String option = pathVar.substring(0, 3).toUpperCase();
-        if (!Objects.equals(option, "DES") && !Objects.equals(option, "ASC")) {
-            return ResponseEntity.badRequest().build();
-        }
-        Comparator<Task> criterion = option.equals("ASC") ?
-                Comparator.comparingInt(Task::getPriority)
-                : (term1, term2) -> term2.getPriority() - term1.getPriority();
-        return ResponseEntity.ok(taskRepository.findAll().stream()
-                .sorted(criterion).toList());
-    }
-
     public Task addTask(Task newTask) {
         return taskRepository.save(newTask);
+    }
+
+    public TaskRepository getTasksRepository() {
+        return taskRepository;
     }
 }
 

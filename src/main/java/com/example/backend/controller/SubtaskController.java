@@ -12,6 +12,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,13 +33,13 @@ public class SubtaskController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getOneSubtask(@PathVariable UUID id) {
-        System.out.println("GET /subtask/" + id);
+        System.out.println(MessageFormat.format("GET /subtask/{0}", id));
         Optional<Subtask> entry = subtaskRepository.findById(id);
         return entry.isPresent()
                 ? ResponseEntity.ok(entry.get())
                 : ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body("Invalid ID -- " + id);
+                .body(MessageFormat.format("Invalid ID -- {0}", id));
     }
 
     @GetMapping("/all")
@@ -49,7 +50,8 @@ public class SubtaskController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<?> patchOneSubtask(@PathVariable UUID id, @Valid @RequestBody @NotNull Subtask updatedSubtask) {
-        System.out.println("PATCH /subtask/" + id);
+        System.out.println(MessageFormat.format("PATCH /subtask/{0}", id));
+        System.out.println(MessageFormat.format("Body: {0}", updatedSubtask));
         if (updatedSubtask.validationFails()) {
             return ResponseEntity.badRequest().build();
         }
@@ -73,6 +75,7 @@ public class SubtaskController {
     @PostMapping("")
     public ResponseEntity<UUID> postOneSubtask(@Valid @RequestBody @NotNull Subtask newSubtask) {
         System.out.println("POST /subtask");
+        System.out.println(MessageFormat.format("Body: {0}", newSubtask));
         if (newSubtask.validationFails()) {
             return ResponseEntity.badRequest().build();
         }
@@ -87,7 +90,7 @@ public class SubtaskController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOneSubtask(@PathVariable UUID id) {
-        System.out.println("DELETE /subtask/" + id);
+        System.out.println(MessageFormat.format("DELETE /subtask/{0}", id));
         if (subtaskRepository.existsById(id)) {
             subtaskRepository.deleteById(id);
             return ResponseEntity.noContent().build();
@@ -98,7 +101,7 @@ public class SubtaskController {
 
     @GetMapping("/by_parent/{id}")
     public ResponseEntity<List<Subtask>> getSubtasksByParentId(@PathVariable UUID id) {
-        System.out.println("GET /subtask/by_parent/" + id);
+        System.out.println(MessageFormat.format("GET /subtask/by_parent/{0}", id));
         List<Subtask> subtasks = subtaskRepository.findByTask(id);
         return ResponseEntity.ok(subtasks);
     }

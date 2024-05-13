@@ -9,6 +9,7 @@ import java.util.UUID;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
-    @Query(value = "SELECT COUNT(*) FROM task t INNER JOIN subtask s ON t.id = s.task WHERE t.id = :id", nativeQuery = true)
-    long countSubtasksByTaskId(@org.springframework.data.repository.query.Param("id") UUID id);
+    @Query(value = "SELECT COUNT(*) FROM task t INNER JOIN subtask s ON t.id = s.task WHERE t.id = :id",
+            nativeQuery = true)
+    long countSubtasksByTask(@org.springframework.data.repository.query.Param("id") UUID id);
 }
