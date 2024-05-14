@@ -55,7 +55,7 @@ public class UserController {
         if (users.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or oldPassword");
         }
-        User user = users.getFirst();
+        User user = users.get(0);
         if (!passwordEncoder.matches(loginRequest.password(), user.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or oldPassword");
         }

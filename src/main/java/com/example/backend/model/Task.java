@@ -13,33 +13,33 @@ import java.util.UUID;
 
 @SuppressWarnings("unused")
 @Entity
-@Table(name="sdi_task")
+@Table(name = "sdi_task")
 public class Task implements HasId, Serializable {
 
     @Id
     @GeneratedValue
-    @Column(name="t_id")
+    @Column(name = "t_id")
     private UUID id;
 
     @NotBlank(message = "Name must not be blank")
-    @Column(name="t_name")
+    @Column(name = "t_name")
     private String name;
 
     @NotNull(message = "Description must not be null")
-    @Column(name="t_description")
+    @Column(name = "t_description")
     private String description;
 
     @Max(value = 10, message = "Priority must be between 1 and 10")
     @Min(value = 1, message = "Priority must be between 1 and 10")
-    @Column(name="t_priority")
+    @Column(name = "t_priority")
     private byte priority;
 
     @NotNull(message = "Due date must not be null")
-    @Column(name="t_due_date")
+    @Column(name = "t_due_date")
     private Instant dueDate;
 
     @NotNull(message = "User must not be null")
-    @Column(name="t_user")
+    @Column(name = "t_user")
     private UUID user;
 
     public Task(String name, String description, byte priority, Instant dueDate, UUID user) {
@@ -123,7 +123,6 @@ public class Task implements HasId, Serializable {
         return name == null
                 || name.isEmpty()
                 || description == null
-                || dueDate == null
-                || user == null;
+                || dueDate == null;
     }
 }

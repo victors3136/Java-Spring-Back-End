@@ -28,12 +28,12 @@ public class TaskController {
     private final TaskRepository taskRepository;
     private final JSONWebTokenGeneratorService jsonWebTokenGeneratorService;
 
-    private UUID originalUserID(String token) {
+    private UUID retrieveUserIDFrom(String token) {
         return jsonWebTokenGeneratorService.decode(token.replace("Bearer ", ""));
     }
 
     private boolean taskBelongsToTokenHolder(Task task, String token) {
-        return task.getUser().equals(originalUserID(token));
+        return task.getUser().equals(retrieveUserIDFrom(token));
     }
 
     @Autowired
@@ -61,17 +61,12 @@ public class TaskController {
         return ResponseEntity.ok(task);
     }
 
-    @GetMapping("/count/{id}")
-    public ResponseEntity<?> getSubtaskCount(@PathVariable UUID id) {
-        System.out.println(MessageFormat.format("GET /task/count/{0}", id));
-        return ResponseEntity.ok(taskRepository.countSubtasksByTask(id));
-    }
 
     @GetMapping("/all")
     public ResponseEntity<List<Task>> getAllTasks(@RequestHeader("Authorization") String token) {
         System.out.println("GET /task/all");
 
-        UUID userId = originalUserID(token);
+        UUID userId = retrieveUserIDFrom(token);
 
         List<Task> tasks = taskRepository.findByUserId(userId);
         return ResponseEntity.ok(tasks);
@@ -85,10 +80,10 @@ public class TaskController {
             return ResponseEntity.badRequest().build();
         }
 
-        UUID userId = originalUserID(token);
+        UUID userId = retrieveUserIDFrom(token);
 
         Specification<Task> whereClause = (task, query, where) ->
-                where.equal(task.get("user").get("id"), userId);
+                where.equal(task.get("user"), userId);
 
         Pageable pageable = PageRequest.of(id, 6);
         Page<Task> taskPage = taskRepository.findAll(whereClause, pageable);
@@ -103,17 +98,20 @@ public class TaskController {
         System.out.println(MessageFormat.format("Body: {0}", updatedTask));
 
         if (updatedTask.validationFails()) {
+            System.out.println("Validation fails");
             return ResponseEntity.badRequest().build();
         }
 
 
         Optional<Task> maybeTask = taskRepository.findById(id);
         if (maybeTask.isEmpty()) {
+            System.out.println("Not found");
             return ResponseEntity.notFound().build();
         }
 
         Task task = maybeTask.get();
         if (!taskBelongsToTokenHolder(task, token)) {
+            System.out.println("Not yours");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("That is not yours to edit!");
         }
 
@@ -121,7 +119,6 @@ public class TaskController {
         task.setDescription(updatedTask.getDescription());
         task.setPriority(updatedTask.getPriority());
         task.setDueDate(updatedTask.getDueDate());
-
         Task savedTask = taskRepository.save(task);
 
         return ResponseEntity.ok(savedTask);
@@ -133,13 +130,15 @@ public class TaskController {
         System.out.println("POST /task");
         System.out.println(MessageFormat.format("Body: {0}", newTask));
         if (newTask.validationFails()) {
+            System.out.println("validation failed");
             return ResponseEntity.badRequest().build();
         }
 
-        UUID userId = originalUserID(token);
+        UUID userId = retrieveUserIDFrom(token);
         newTask.setUser(userId);
 
         Task savedTask = taskRepository.save(newTask);
+        System.out.println(savedTask);
         return new ResponseEntity<>(savedTask.getId(), HttpStatus.CREATED);
     }
 

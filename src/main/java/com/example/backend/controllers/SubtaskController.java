@@ -42,6 +42,12 @@ public class SubtaskController {
                 .body(MessageFormat.format("Invalid ID -- {0}", id));
     }
 
+    @GetMapping("/count/{id}")
+    public ResponseEntity<?> getSubtaskCount(@PathVariable UUID id) {
+        System.out.println(MessageFormat.format("GET /subtask/count/{0}", id));
+        return ResponseEntity.ok(subtaskRepository.countSubtasksByTask(id));
+    }
+
     @GetMapping("/all")
     public ResponseEntity<List<Subtask>> getAllSubtasks() {
         System.out.println("GET /subtask/all");
@@ -99,7 +105,7 @@ public class SubtaskController {
         }
     }
 
-    @GetMapping("/by_parent/{id}")
+    @GetMapping("/for/{id}")
     public ResponseEntity<List<Subtask>> getSubtasksByParentId(@PathVariable UUID id) {
         System.out.println(MessageFormat.format("GET /subtask/by_parent/{0}", id));
         List<Subtask> subtasks = subtaskRepository.findByTask(id);
