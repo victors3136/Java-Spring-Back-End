@@ -34,12 +34,16 @@ public class Task implements HasId, Serializable {
     @NotNull(message = "Due date must not be null")
     private Instant dueDate;
 
-    public Task(String name, String description, byte priority, Instant dueDate) {
+    @NotNull(message = "User must not be null")
+    private UUID user;
+
+    public Task(String name, String description, byte priority, Instant dueDate, UUID user) {
         this.id = UUID.randomUUID();
         this.name = name;
         this.description = description;
         this.priority = priority;
         this.dueDate = dueDate;
+        this.user = user;
     }
 
     public Task() {
@@ -88,11 +92,19 @@ public class Task implements HasId, Serializable {
         this.dueDate = dueDate;
     }
 
+    public UUID getUser() {
+        return user;
+    }
+
+    public void setUser(UUID user) {
+        this.user = user;
+    }
+
     @Override
     public String toString() {
         return """
-                { "id":"%s", "name":"%s", "description":"%s", "priority":"%s", "dueDate":"%s"}
-                """.formatted(id, name, description, priority, dueDate);
+                { "id":"%s", "name":"%s", "description":"%s", "priority":"%s", "dueDate":"%s, "user":"%s"}
+                """.formatted(id, name, description, priority, dueDate, user);
     }
 
     @Override
@@ -106,7 +118,7 @@ public class Task implements HasId, Serializable {
         return name == null
                 || name.isEmpty()
                 || description == null
-                || dueDate == null;
+                || dueDate == null
+                || user == null;
     }
-
 }
