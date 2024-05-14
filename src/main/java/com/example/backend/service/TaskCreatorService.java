@@ -10,7 +10,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Random;
 import java.util.UUID;
 
-@Deprecated
 @Service
 @CrossOrigin
 public class TaskCreatorService {
