@@ -1,6 +1,6 @@
-package com.example.backend;
+package modules;
 
-import com.example.backend.controller.TaskController;
+import com.example.backend.controllers.TaskController;
 import com.example.backend.model.Task;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

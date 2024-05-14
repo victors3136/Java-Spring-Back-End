@@ -1,10 +1,10 @@
-package com.example.backend.controller;
+package com.example.backend.controllers;
 
 import com.example.backend.model.User;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.requests.ChangePasswordRequest;
+import com.example.backend.requests.LoginRequest;
 import com.example.backend.service.JSONWebTokenGeneratorService;
-import com.example.backend.user_requests.ChangePasswordRequest;
-import com.example.backend.user_requests.LoginRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -51,12 +51,12 @@ public class UserController {
         System.out.println(loginRequest);
         Optional<User> optionalUser = userRepository.findByUsername(loginRequest.username());
         if (optionalUser.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or oldPassword");
         }
         User user = optionalUser.get();
 
         if (!passwordEncoder.matches(loginRequest.password(), user.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or oldPassword");
         }
 
         String jsonWebToken = jwtTokenGeneratorService.generateJWT(user);
@@ -67,22 +67,23 @@ public class UserController {
     public ResponseEntity<String> changePassword(@RequestBody ChangePasswordRequest changePasswordRequest) {
         System.out.println("PATCH user/change_password");
         System.out.println(changePasswordRequest);
-        String username = changePasswordRequest.username();
-        String oldPassword = changePasswordRequest.oldPassword();
-        String newPassword = changePasswordRequest.newPassword();
+
+        String username = changePasswordRequest.username(),
+                oldPassword = changePasswordRequest.oldPassword(),
+                newPassword = changePasswordRequest.newPassword();
 
         Optional<User> optionalUser = userRepository.findByUsername(username);
+
         if (optionalUser.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or oldPassword");
         }
         User user = optionalUser.get();
 
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or oldPassword");
         }
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         return ResponseEntity.ok().body("Password changed successfully");
     }
 }
-

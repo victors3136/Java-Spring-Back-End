@@ -34,16 +34,12 @@ public class Task implements HasId, Serializable {
     @NotNull(message = "Due date must not be null")
     private Instant dueDate;
 
-    @NotNull(message = "User must not be null")
-    private UUID user;
-
-    public Task(String name, String description, byte priority, Instant dueDate, UUID user) {
+    public Task(String name, String description, byte priority, Instant dueDate) {
         this.id = UUID.randomUUID();
         this.name = name;
         this.description = description;
         this.priority = priority;
         this.dueDate = dueDate;
-        this.user = user;
     }
 
     public Task() {
@@ -92,25 +88,11 @@ public class Task implements HasId, Serializable {
         this.dueDate = dueDate;
     }
 
-    public UUID getUser() {
-        return user;
-    }
-
-    public void setUser(UUID user) {
-        this.user = user;
-    }
-
     @Override
     public String toString() {
         return """
-                {
-                    "id":"%s",
-                    "name":"%s",
-                    "description":"%s",
-                    "priority":"%s",
-                    "dueDate":"%s",
-                    "user": "%s"
-                }""".formatted(id, name, description, priority, dueDate, user);
+                { "id":"%s", "name":"%s", "description":"%s", "priority":"%s", "dueDate":"%s"}
+                """.formatted(id, name, description, priority, dueDate);
     }
 
     @Override
@@ -121,13 +103,10 @@ public class Task implements HasId, Serializable {
     }
 
     public boolean validationFails() {
-        return (name == null) ||
-                (name.isEmpty()) ||
-                (description == null) ||
-                (priority < 1) ||
-                (priority > 10) ||
-                (dueDate == null) ||
-                (user == null);
+        return name == null
+                || name.isEmpty()
+                || description == null
+                || dueDate == null;
     }
 
 }

@@ -1,4 +1,4 @@
-package com.example.backend.controller;
+package com.example.backend.controllers;
 
 import com.example.backend.model.Task;
 import com.example.backend.repository.TaskRepository;

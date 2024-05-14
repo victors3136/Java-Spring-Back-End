@@ -75,11 +75,7 @@ public class User implements HasId {
     @Override
     public String toString() {
         return """
-                {
-                    "id":"%s",
-                    "name":"%s",
-                    "password":"%s",
-                    "email":"%s"
-                }""".formatted(id, username, password, email);
+                {"id":"%s","name":"%s","oldPassword":"%s","email":"%s"}
+                """.formatted(id, username, password, email);
     }
 }
