@@ -1,8 +1,6 @@
 package com.example.backend.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -10,20 +8,25 @@ import java.util.UUID;
 
 @SuppressWarnings("unused")
 @Entity
+@Table(name = "sdi_user")
 public class User implements HasId {
 
     @Id
     @GeneratedValue
+    @Column(name = "u_id")
     private UUID id;
 
     @NotBlank(message = "Username must not be blank")
     @NotNull(message = "Username must be present for any user")
+    @Column(name = "u_username")
     private String username;
 
     @NotBlank(message = "Password must not be blank")
     @NotNull(message = "Password must be present for any user")
+    @Column(name = "u_password")
     private String password;
 
+    @Column(name = "u_email")
     private String email;
 
 
@@ -75,7 +78,7 @@ public class User implements HasId {
     @Override
     public String toString() {
         return """
-                {"id":"%s","name":"%s","oldPassword":"%s","email":"%s"}
+                {"id":"%s","name":"%s","password":"%s","email":"%s"}
                 """.formatted(id, username, password, email);
     }
 }

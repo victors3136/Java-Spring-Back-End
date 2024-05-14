@@ -12,6 +12,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -36,8 +38,8 @@ public class UserController {
     public ResponseEntity<String> register(@Validated @RequestBody User user) {
         System.out.println("POST /user/register");
         System.out.println(user);
-        Optional<User> optionalUser = userRepository.findByUsername(user.getUsername());
-        if (optionalUser.isPresent()) {
+        List<User> users = userRepository.findAll().stream().filter(u -> Objects.equals(u.getUsername(), user.getUsername())).toList();
+        if (!users.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Username already taken");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -49,17 +51,15 @@ public class UserController {
     public ResponseEntity<String> login(@Validated @RequestBody LoginRequest loginRequest) {
         System.out.println("POST /user/login");
         System.out.println(loginRequest);
-        Optional<User> optionalUser = userRepository.findByUsername(loginRequest.username());
-        if (optionalUser.isEmpty()) {
+        List<User> users = userRepository.findAll().stream().filter(u -> u.getUsername().equals(loginRequest.username())).toList();
+        if (users.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or oldPassword");
         }
-        User user = optionalUser.get();
-
+        User user = users.getFirst();
         if (!passwordEncoder.matches(loginRequest.password(), user.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or oldPassword");
         }
-
-        String jsonWebToken = jwtTokenGeneratorService.generateJWT(user);
+        String jsonWebToken = jwtTokenGeneratorService.encode(user.getId());
         return ResponseEntity.ok().body(jsonWebToken);
     }
 

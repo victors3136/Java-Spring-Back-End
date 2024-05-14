@@ -1,21 +1,25 @@
 package com.example.backend.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 import javax.validation.constraints.NotBlank;
 import java.io.Serializable;
 import java.util.UUID;
 
 @Entity
+@Table(name="sdi_subtask")
 public class Subtask implements HasId, Serializable {
 
     @Id
     @GeneratedValue
+    @Column(name = "s_id")
     private UUID id;
+
     @NotBlank(message = "Subject must not be blank")
+    @Column(name = "s_subject")
     private String subject;
+
+    @Column(name = "s_task")
     private UUID task;
 
     public Subtask(String subject, UUID parentTask) {

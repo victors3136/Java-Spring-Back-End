@@ -1,9 +1,7 @@
 package com.example.backend.model;
 
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
@@ -15,26 +13,33 @@ import java.util.UUID;
 
 @SuppressWarnings("unused")
 @Entity
+@Table(name="sdi_task")
 public class Task implements HasId, Serializable {
 
     @Id
     @GeneratedValue
+    @Column(name="t_id")
     private UUID id;
 
     @NotBlank(message = "Name must not be blank")
+    @Column(name="t_name")
     private String name;
 
     @NotNull(message = "Description must not be null")
+    @Column(name="t_description")
     private String description;
 
     @Max(value = 10, message = "Priority must be between 1 and 10")
     @Min(value = 1, message = "Priority must be between 1 and 10")
+    @Column(name="t_priority")
     private byte priority;
 
     @NotNull(message = "Due date must not be null")
+    @Column(name="t_due_date")
     private Instant dueDate;
 
     @NotNull(message = "User must not be null")
+    @Column(name="t_user")
     private UUID user;
 
     public Task(String name, String description, byte priority, Instant dueDate, UUID user) {
