@@ -1,8 +1,7 @@
 package com.example.backend.service;
 
-import com.example.backend.controller.TaskController;
+import com.example.backend.controllers.TaskController;
 import com.example.backend.model.Task;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
@@ -11,12 +10,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.Random;
 import java.util.UUID;
 
-@Deprecated
 @Service
 @CrossOrigin
 public class TaskCreatorService {
-    @Autowired
-    private TaskController taskController;
+    private final TaskController taskController;
 
     private long generator = 0;
     private static final String[] subjects = {
@@ -34,6 +31,10 @@ public class TaskCreatorService {
             "Lab"
     };
     private static final Random random = new Random(Instant.now().toEpochMilli());
+
+    public TaskCreatorService(TaskController taskController) {
+        this.taskController = taskController;
+    }
 
     public Task createEntity() {
         Task newTask = new Task(

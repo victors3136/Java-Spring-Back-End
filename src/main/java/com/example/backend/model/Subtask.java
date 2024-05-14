@@ -58,16 +58,14 @@ public class Subtask implements HasId, Serializable {
 
     @Override
     public String toString() {
-        return ("{\"" +
-                "id\"=\"%s\"," +
-                "\"subject\"=\"%s\"," +
-                "\"task\"=\"%s\"" +
-                "}").formatted(id, subject, task);
+        return ("""
+                {"id"="%s","subject"="%s","task"="%s"}
+                """).formatted(id, subject, task);
     }
 
     public boolean validationFails() {
         return subject == null
-                || subject.equals("")
+                || subject.isEmpty()
                 || id == null
                 || task == null;
     }

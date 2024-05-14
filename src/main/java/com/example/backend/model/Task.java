@@ -103,14 +103,8 @@ public class Task implements HasId, Serializable {
     @Override
     public String toString() {
         return """
-                {
-                    "id":"%s",
-                    "name":"%s",
-                    "description":"%s",
-                    "priority":"%s",
-                    "dueDate":"%s",
-                    "user": "%s"
-                }""".formatted(id, name, description, priority, dueDate, user);
+                { "id":"%s", "name":"%s", "description":"%s", "priority":"%s", "dueDate":"%s, "user":"%s"}
+                """.formatted(id, name, description, priority, dueDate, user);
     }
 
     @Override
@@ -121,13 +115,10 @@ public class Task implements HasId, Serializable {
     }
 
     public boolean validationFails() {
-        return (name == null) ||
-                (name.isEmpty()) ||
-                (description == null) ||
-                (priority < 1) ||
-                (priority > 10) ||
-                (dueDate == null) ||
-                (user == null);
+        return name == null
+                || name.isEmpty()
+                || description == null
+                || dueDate == null
+                || user == null;
     }
-
 }
