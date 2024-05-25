@@ -27,10 +27,10 @@ public class JSONWebTokenGeneratorService {
                 .setSubject(id)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis()
-                        /*  1_000   milliseconds/second
-                         *     60   seconds/minute
-                         *     60   minutes/hour
-                         *     10   hours
+                                 /*  1_000   milliseconds/second
+                                  *     60   seconds/minute
+                                  *     60   minutes/hour
+                                  *     10   hours
                          _________________________________ */
                         /*=*/ + 36_000_000 /* milliseconds */))
                 .signWith(key)
