@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 import com.example.backend.controllers.SubtaskController;
+import com.example.backend.model.Role;
 import com.example.backend.model.Subtask;
 import com.example.backend.model.Task;
 import org.springframework.stereotype.Service;
@@ -28,10 +29,10 @@ public class SubtaskCreatorService {
         if (tasksList.isEmpty()) {
             return;
         }
-        Subtask newTask = new Subtask(
+        Subtask newSubtask = new Subtask(
                 subjects[(int) (generator % subjects.length)],
                 tasksList.get((int) ((generator++) % tasksList.size())).getId()
         );
-        subtaskController.addSubtask(newTask);
+        subtaskController.addSubtask(newSubtask);
     }
 }

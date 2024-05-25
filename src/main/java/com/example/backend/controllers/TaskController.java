@@ -133,12 +133,9 @@ public class TaskController {
             System.out.println("validation failed");
             return ResponseEntity.badRequest().build();
         }
-
         UUID userId = retrieveUserIDFrom(token);
         newTask.setUser(userId);
-
         Task savedTask = taskRepository.save(newTask);
-        System.out.println(savedTask);
         return new ResponseEntity<>(savedTask.getId(), HttpStatus.CREATED);
     }
 
