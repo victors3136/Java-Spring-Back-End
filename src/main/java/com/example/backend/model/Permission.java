@@ -1,9 +1,9 @@
 package com.example.backend.model;
 
 import jakarta.persistence.*;
-import org.hibernate.validator.constraints.UniqueElements;
 
 import java.io.Serializable;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -15,9 +15,11 @@ public class Permission implements HasId, Serializable {
     @Column(name = "p_id")
     private UUID id;
 
-    @Column(name = "p_name")
+    @Column(name = "p_name", unique = true, nullable = false)
     private String name;
 
+    @OneToMany(mappedBy = "permission")
+    private Set<RolePermission> rolePermissions;
 
     public Permission(String name) {
         id = UUID.randomUUID();

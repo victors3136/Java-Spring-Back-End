@@ -4,6 +4,7 @@ package com.example.backend.model;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -17,6 +18,9 @@ public class Role implements HasId, Serializable {
 
     @Column(name = "r_name")
     private String name;
+
+    @OneToMany(mappedBy = "role")
+    private Set<RolePermission> rolePermissions;
 
     public Role(String name) {
         id = UUID.randomUUID();
