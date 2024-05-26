@@ -3,6 +3,7 @@ package com.example.backend.service;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.jetbrains.annotations.Contract;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -12,14 +13,15 @@ import java.util.Date;
 import java.util.UUID;
 
 @Service
-public class JSONWebTokenGeneratorService {
+public class JSONWebTokenService {
 
     private final String hashingKey;
 
-    public JSONWebTokenGeneratorService(@Value("${jwt.key}") String hashingKey) {
+    public JSONWebTokenService(@Value("${jwt.key}") String hashingKey) {
         this.hashingKey = hashingKey;
     }
 
+    @Contract(pure = true)
     public String encode(UUID userID) {
         String id = userID.toString();
         Key key = new SecretKeySpec(hashingKey.getBytes(), SignatureAlgorithm.HS256.getJcaName());
@@ -37,6 +39,7 @@ public class JSONWebTokenGeneratorService {
                 .compact();
     }
 
+    @Contract(pure = true)
     public UUID decode(String token) {
         return UUID.fromString(
                 Jwts.parserBuilder()
@@ -46,5 +49,10 @@ public class JSONWebTokenGeneratorService {
                         .parseClaimsJws(token)
                         .getBody()
                         .getSubject());
+    }
+
+    @Contract(pure = true)
+    public UUID parse(String token) {
+        return decode(token.replace("Bearer ", ""));
     }
 }

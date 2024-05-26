@@ -1,6 +1,5 @@
 package com.example.backend.repository;
 
-import com.example.backend.model.Role;
 import com.example.backend.model.Subtask;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +11,7 @@ public interface SubtaskRepository extends JpaRepository<Subtask, UUID> {
 
     List<Subtask> findByTask(UUID sTask);
     @Query(value = """
+            -- noinspection SqlResolve
             select count(*)
             from sdi_subtask
             where s_task = :id

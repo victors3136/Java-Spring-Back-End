@@ -1,14 +1,10 @@
 package com.example.backend.controllers;
 
 import com.example.backend.model.Task;
-import com.example.backend.repository.TaskRepository;
-import com.example.backend.service.JSONWebTokenGeneratorService;
+import com.example.backend.service.TaskService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -25,70 +21,35 @@ import java.util.UUID;
 @RequestMapping("/task")
 @CrossOrigin(origins = "*")
 public class TaskController {
-    private final TaskRepository taskRepository;
-    private final JSONWebTokenGeneratorService jsonWebTokenGeneratorService;
-
-    private UUID retrieveUserIDFrom(String token) {
-        return jsonWebTokenGeneratorService.decode(token.replace("Bearer ", ""));
-    }
-
-    private boolean taskBelongsToTokenHolder(Task task, String token) {
-        return task.getUser().equals(retrieveUserIDFrom(token));
-    }
+    private final TaskService taskService;
 
     @Autowired
-    public TaskController(TaskRepository taskRepository, JSONWebTokenGeneratorService jsonWebTokenGeneratorService) {
-        this.taskRepository = taskRepository;
-        this.jsonWebTokenGeneratorService = jsonWebTokenGeneratorService;
+    public TaskController(TaskService taskService) {
+        this.taskService = taskService;
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getOneTask(@PathVariable UUID id, @RequestHeader("Authorization") String token) {
         System.out.println(MessageFormat.format("GET /task/{0}", id));
-
-        Optional<Task> maybeTask = taskRepository.findById(id);
-        if (maybeTask.isEmpty()) {
-            return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
-                    .body(MessageFormat.format("Invalid ID -- {0}", id));
-        }
-        Task task = maybeTask.get();
-
-        if (!taskBelongsToTokenHolder(task, token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("That is not yours to see!");
-        }
-
-        return ResponseEntity.ok(task);
+        Optional<Task> task = taskService.getForTokenHolderById(id, token);
+        return task.isPresent()
+                ? ResponseEntity.ok(task.get())
+                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("That is not yours to see!");
     }
 
 
     @GetMapping("/all")
-    public ResponseEntity<List<Task>> getAllTasks(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<List<Task>> getAllTasks(@RequestHeader("Authorization") String ignoredToken) {
         System.out.println("GET /task/all");
-
-        UUID userId = retrieveUserIDFrom(token);
-
-        List<Task> tasks = taskRepository.findByUserId(userId);
-        return ResponseEntity.ok(tasks);
+        return ResponseEntity.ok(taskService.getAll().stream().toList());
     }
 
     @GetMapping("/all/{id}")
     public ResponseEntity<Page<Task>> getTaskPage(@PathVariable int id, @RequestHeader("Authorization") String token) {
         System.out.println(MessageFormat.format("GET /task/all/{0}", id));
-
-        if (id < 0) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        UUID userId = retrieveUserIDFrom(token);
-
-        Specification<Task> whereClause = (task, query, where) ->
-                where.equal(task.get("user"), userId);
-
-        Pageable pageable = PageRequest.of(id, 6);
-        Page<Task> taskPage = taskRepository.findAll(whereClause, pageable);
-
-        return ResponseEntity.ok(taskPage);
+        return taskService.getPage(id, 6, token)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.badRequest().build());
     }
 
 
@@ -101,41 +62,26 @@ public class TaskController {
             System.out.println("Validation fails");
             return ResponseEntity.badRequest().build();
         }
-
-
-        Optional<Task> maybeTask = taskRepository.findById(id);
-        if (maybeTask.isEmpty()) {
-            System.out.println("Not found");
-            return ResponseEntity.notFound().build();
+        if (!taskService.tryToUpdate(id, updatedTask, token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("That is not yours to edit!");
         }
-
-        Task task = maybeTask.get();
-        if (!taskBelongsToTokenHolder(task, token)) {
-            System.out.println("Not yours");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("That is not yours to edit!");
-        }
-
-        task.setName(updatedTask.getName());
-        task.setDescription(updatedTask.getDescription());
-        task.setPriority(updatedTask.getPriority());
-        task.setDueDate(updatedTask.getDueDate());
-        Task savedTask = taskRepository.save(task);
-
-        return ResponseEntity.ok(savedTask);
+        var task = taskService.getById(id);
+        return task.isPresent()
+                ? ResponseEntity.ok(task.get())
+                : ResponseEntity.notFound().build();
     }
 
 
     @PostMapping("")
-    public ResponseEntity<UUID> postOneTask(@Valid @RequestBody @NotNull Task newTask, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<UUID> postOneTask(@Valid @RequestBody @NotNull Task newTask, @RequestHeader("Authorization") String ignoredToken) {
         System.out.println("POST /task");
         System.out.println(MessageFormat.format("Body: {0}", newTask));
         if (newTask.validationFails()) {
             System.out.println("validation failed");
             return ResponseEntity.badRequest().build();
         }
-        UUID userId = retrieveUserIDFrom(token);
-        newTask.setUser(userId);
-        Task savedTask = taskRepository.save(newTask);
+        Task savedTask = taskService.save(newTask);
         return new ResponseEntity<>(savedTask.getId(), HttpStatus.CREATED);
     }
 
@@ -143,44 +89,22 @@ public class TaskController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOneTask(@PathVariable UUID id, @RequestHeader("Authorization") String token) {
         System.out.println(MessageFormat.format("DELETE /task/{0}", id));
-
-        Optional<Task> existingTaskOptional = taskRepository.findById(id);
-        if (existingTaskOptional.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        Task existingTask = existingTaskOptional.get();
-        if (!taskBelongsToTokenHolder(existingTask, token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("That is not yours to delete!");
-        }
-        taskRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return taskService.tryToDelete(id, token)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("That is not yours to delete!");
     }
 
     @DeleteMapping("/batch")
     public ResponseEntity<?> deleteTasksBatch(@RequestBody @NotNull List<UUID> ids, @RequestHeader("Authorization") String token) {
         System.out.println("DELETE /task/batch");
         System.out.println(MessageFormat.format("Body: [{0}]", ids.stream().map(UUID::toString).reduce("", (s1, s2) -> s1 + ", " + s2)));
-
-        List<Task> tasksToDelete = taskRepository
-                .findAllById(ids)
-                .stream()
-                .filter(task -> taskBelongsToTokenHolder(task, token))
-                .toList();
-
-        if (!tasksToDelete.isEmpty()) {
-            taskRepository.deleteAll(tasksToDelete);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        return taskService.batchDelete(ids, token)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 
     public Task addTask(Task newTask) {
-        return taskRepository.save(newTask);
-    }
-
-    @SuppressWarnings("unused")
-    public TaskRepository getTasksRepository() {
-        return taskRepository;
+        return taskService.save(newTask);
     }
 }
 

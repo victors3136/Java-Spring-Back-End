@@ -14,6 +14,7 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query(value = """
+            -- noinspection SqlResolve
             select *
             from sdi_user
             where u_username = :username
@@ -21,37 +22,41 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByUsername(@Param("username") String username);
 
     @Query(value = """
-                select *
-                from sdi_user
-                where u_email = :email
+            -- noinspection SqlResolve
+            select *
+            from sdi_user
+            where u_email = :email
             """, nativeQuery = true)
     Collection<User> findByEmail(@Param("email") String email);
 
     @Query(value = """
-                update sdi_user
-                set u_username = :name,
-                    u_eail = :email,
-                    u_password = :password
-                where u_id = :id
+            -- noinspection SqlResolve
+            update sdi_user
+            set u_username = :name,
+                u_email = :email,
+                u_password = :password
+            where u_id = :id
             """, nativeQuery = true)
-    void updateUserById(@Param("name") UUID id, @Param("name") String name, @Param("name") String email, @Param("name") String password);
+    void updateUserById(@Param("id") UUID id, @Param("name") String name, @Param("email") String email, @Param("password") String password);
 
     @Query(value = """
-                select (
-                    exists (
-                        select 1
-                        from sdi_user
-                        where u_username = :username ))
+            -- noinspection SqlResolve
+            select (
+                exists (
+                    select 1
+                    from sdi_user
+                    where u_username = :username ))
             """, nativeQuery = true)
     boolean existsByUsername(@Param("username") String username);
 
 
     @Query(value = """
-                select (
-                    exists (
-                        select 1
-                        from sdi_user
-                        where u_email = :email ))
+            -- noinspection SqlResolve
+            select (
+                exists (
+                    select 1
+                    from sdi_user
+                    where u_email = :email ))
             """, nativeQuery = true)
     boolean existsByEmail(@Param("email") String email);
 }

@@ -1,7 +1,5 @@
 package com.example.backend.service;
 
-import com.example.backend.model.User;
-
 import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,7 +12,9 @@ public interface EntityService<Generic> {
 
     Generic save(Generic entity);
 
-    Optional<User> update(Generic entity);
+    @SuppressWarnings("unused")
+    Optional<Generic> update(Generic entity);
 
-    User delete(Generic entity);
+    @SuppressWarnings("unused")
+    Generic delete(Generic entity);
 }

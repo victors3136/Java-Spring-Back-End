@@ -63,7 +63,7 @@ public class UserService implements IUserService {
     @Override
     public Optional<User> tryToLogIn(LoginRequest request) {
         return source.findByUsername(request.username())
-                .filter(dbObject -> correctPassword(dbObject.getId(), request.password()));
+                .filter(dbUserRow -> correctPassword(dbUserRow.getId(), request.password()));
     }
 
     @Override

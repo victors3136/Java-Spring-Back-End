@@ -3,7 +3,7 @@ package com.example.backend.controllers;
 import com.example.backend.model.User;
 import com.example.backend.requests.ChangePasswordRequest;
 import com.example.backend.requests.LoginRequest;
-import com.example.backend.service.JSONWebTokenGeneratorService;
+import com.example.backend.service.JSONWebTokenService;
 import com.example.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,10 +17,10 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "*")
 public class UserController {
     private final UserService userService;
-    private final JSONWebTokenGeneratorService jwtTokenGeneratorService;
+    private final JSONWebTokenService jwtTokenGeneratorService;
 
     @Autowired
-    public UserController(UserService userService, JSONWebTokenGeneratorService jwtTokenGeneratorService) {
+    public UserController(UserService userService, JSONWebTokenService jwtTokenGeneratorService) {
         this.jwtTokenGeneratorService = jwtTokenGeneratorService;
         this.userService = userService;
     }
