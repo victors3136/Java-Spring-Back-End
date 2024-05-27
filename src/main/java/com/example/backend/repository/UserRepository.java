@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -59,4 +60,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
                     where u_email = :email ))
             """, nativeQuery = true)
     boolean existsByEmail(@Param("email") String email);
+
+    @Query(value = """
+            -- noinspection SqlResolve
+            select p_name
+            from sdi_permission
+            inner join sdi_role_permission on p_id = rp_permission
+            inner join sdi_role on rp_role = r_id
+            inner join sdi_user on u_role = r_id
+            where u_id = :id
+            """, nativeQuery = true)
+    List<String> findPermissionsByUserId(@Param("id") UUID id);
 }

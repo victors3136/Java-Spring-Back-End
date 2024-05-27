@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.Set;
 import java.util.UUID;
 
+@SuppressWarnings("JpaDataSourceORMInspection")
 @Entity
 @Table(name = "sdi_permission")
 public class Permission implements HasId, Serializable {
@@ -18,13 +19,9 @@ public class Permission implements HasId, Serializable {
     @Column(name = "p_name", unique = true, nullable = false)
     private String name;
 
+    @SuppressWarnings("unused")
     @OneToMany(mappedBy = "permission")
     private Set<RolePermission> rolePermissions;
-
-    public Permission(String name) {
-        id = UUID.randomUUID();
-        this.name = name;
-    }
 
     public Permission() {
 
@@ -56,6 +53,7 @@ public class Permission implements HasId, Serializable {
                 """).formatted(id, name);
     }
 
+    @SuppressWarnings("unused")
     public boolean validationFails() {
         return name == null
                 || name.isEmpty()

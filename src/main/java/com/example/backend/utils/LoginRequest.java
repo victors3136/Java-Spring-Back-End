@@ -1,3 +1,3 @@
-package com.example.backend.requests;
+package com.example.backend.utils;
 
 public record LoginRequest(String username, String password){}
