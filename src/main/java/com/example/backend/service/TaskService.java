@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -101,7 +102,7 @@ public class TaskService implements ITaskService {
                     updated.setDescription(task.getDescription());
                     updated.setPriority(task.getPriority());
                     updated.setDueDate(task.getDueDate());
-                    updated.setUser(task.getUser());
+                    updated.setUser(jwtService.parse(userToken));
                     source.save(updated);
                     return true;
                 })
@@ -132,7 +133,7 @@ public class TaskService implements ITaskService {
     }
 
     @Override
-    public boolean batchDelete(Collection<UUID> ids, String userToken) {
+    public boolean batchDelete(List<UUID> ids, String userToken) {
         var idsOfTasksThatCanBeDeleted = source.findAllById(ids)
                 .stream()
                 .filter(task -> taskBelongsToTokenHolder(task, userToken))
@@ -140,7 +141,7 @@ public class TaskService implements ITaskService {
         if (idsOfTasksThatCanBeDeleted.isEmpty()) {
             return false;
         }
-        source.deleteAll(idsOfTasksThatCanBeDeleted);
+        source.deleteAllInBatch(idsOfTasksThatCanBeDeleted);
         return true;
     }
 }

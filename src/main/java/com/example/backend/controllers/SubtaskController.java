@@ -1,9 +1,7 @@
 package com.example.backend.controllers;
 
 import com.example.backend.model.Subtask;
-import com.example.backend.repository.SubtaskRepository;
-import com.example.backend.repository.TaskRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.example.backend.service.SubtaskService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,19 +20,17 @@ import java.util.UUID;
 @CrossOrigin(origins = "*")
 @RequestMapping("/subtask")
 public class SubtaskController {
-    private final SubtaskRepository subtaskRepository;
-    private final TaskRepository taskRepository;
+    private final SubtaskService subtaskService;
 
     @Autowired
-    public SubtaskController(SubtaskRepository subtasks, TaskRepository tasks) {
-        subtaskRepository = subtasks;
-        taskRepository = tasks;
+    public SubtaskController(SubtaskService subtaskService) {
+        this.subtaskService = subtaskService;
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getOneSubtask(@PathVariable UUID id) {
         System.out.println(MessageFormat.format("GET /subtask/{0}", id));
-        Optional<Subtask> entry = subtaskRepository.findById(id);
+        Optional<Subtask> entry = subtaskService.getById(id);
         return entry.isPresent()
                 ? ResponseEntity.ok(entry.get())
                 : ResponseEntity
@@ -45,78 +41,51 @@ public class SubtaskController {
     @GetMapping("/count/{id}")
     public ResponseEntity<?> getSubtaskCount(@PathVariable UUID id) {
         System.out.println(MessageFormat.format("GET /subtask/count/{0}", id));
-        return ResponseEntity.ok(subtaskRepository.countSubtasksByTask(id));
+        return ResponseEntity.ok(subtaskService.countSubtasksByTask(id));
     }
 
     @GetMapping("/all")
     public ResponseEntity<List<Subtask>> getAllSubtasks() {
         System.out.println("GET /subtask/all");
-        return ResponseEntity.ok(subtaskRepository.findAll());
+        return ResponseEntity.ok(subtaskService.getAll().stream().toList());
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<?> patchOneSubtask(@PathVariable UUID id, @Valid @RequestBody @NotNull Subtask updatedSubtask) {
         System.out.println(MessageFormat.format("PATCH /subtask/{0}", id));
         System.out.println(MessageFormat.format("Body: {0}", updatedSubtask));
-        if (updatedSubtask.validationFails()) {
+        if (updatedSubtask.validationFails() || !subtaskService.tryToUpdate(id, updatedSubtask)) {
             return ResponseEntity.badRequest().build();
         }
-        try {
-            taskRepository.getReferenceById(updatedSubtask.getTask());
-        } catch (EntityNotFoundException _discard) {
-            return ResponseEntity.badRequest().build();
-        }
-        Optional<Subtask> existingSubtaskOptional = subtaskRepository.findById(id);
-        if (existingSubtaskOptional.isPresent()) {
-            Subtask existingSubtask = existingSubtaskOptional.get();
-            existingSubtask.setSubject(updatedSubtask.getSubject());
-            existingSubtask.setTask(updatedSubtask.getTask());
-            Subtask savedSubtask = subtaskRepository.save(existingSubtask);
-            return ResponseEntity.ok(savedSubtask);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        var subtask = subtaskService.getById(id);
+        return subtask.isPresent()
+                ? ResponseEntity.ok(subtask.get())
+                : ResponseEntity.notFound().build();
     }
 
-    @PostMapping("")
+    @PostMapping
     public ResponseEntity<UUID> postOneSubtask(@Valid @RequestBody @NotNull Subtask newSubtask) {
         System.out.println("POST /subtask");
         System.out.println(MessageFormat.format("Body: {0}", newSubtask));
         if (newSubtask.validationFails()) {
             return ResponseEntity.badRequest().build();
         }
-        try {
-            taskRepository.getReferenceById(newSubtask.getTask());
-        } catch (EntityNotFoundException _discard) {
-            return ResponseEntity.badRequest().build();
-        }
-        var savedSubtask = subtaskRepository.save(newSubtask);
+
+        Subtask savedSubtask = subtaskService.save(newSubtask);
         return new ResponseEntity<>(savedSubtask.getId(), HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOneSubtask(@PathVariable UUID id) {
         System.out.println(MessageFormat.format("DELETE /subtask/{0}", id));
-        if (subtaskRepository.existsById(id)) {
-            subtaskRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return subtaskService.tryToDelete(id)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/for/{id}")
     public ResponseEntity<List<Subtask>> getSubtasksByParentId(@PathVariable UUID id) {
         System.out.println(MessageFormat.format("GET /subtask/by_parent/{0}", id));
-        List<Subtask> subtasks = subtaskRepository.findByTask(id);
-        return ResponseEntity.ok(subtasks);
-    }
-
-    public void addSubtask(Subtask newSubtask) {
-        subtaskRepository.save(newSubtask);
-    }
-
-    public TaskRepository getTasksRepository() {
-        return taskRepository;
+        return ResponseEntity.ok(subtaskService.getForTask(id).stream().toList());
     }
 }

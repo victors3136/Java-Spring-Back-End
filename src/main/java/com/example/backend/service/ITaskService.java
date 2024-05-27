@@ -4,6 +4,7 @@ import com.example.backend.model.Task;
 import org.springframework.data.domain.Page;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,5 +25,5 @@ public interface ITaskService extends EntityService<Task> {
 
     boolean tryToDelete(UUID id, String userToken);
 
-    boolean batchDelete(Collection<UUID> ids, String userToken);
+    boolean batchDelete(List<UUID> ids, String userToken);
 }

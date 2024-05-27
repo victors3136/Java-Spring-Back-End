@@ -6,7 +6,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.util.UUID;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "JpaDataSourceORMInspection"})
 @Entity
 @Table(name = "sdi_user")
 public class User implements HasId {
@@ -28,6 +28,9 @@ public class User implements HasId {
 
     @Column(name = "u_email")
     private String email;
+
+    @Column(name = "u_role")
+    private UUID role;
 
 
     public User() {
@@ -68,6 +71,14 @@ public class User implements HasId {
         this.email = email;
     }
 
+    public UUID getRole() {
+        return role;
+    }
+
+    public void setRole(UUID role) {
+        this.role = role;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -78,7 +89,7 @@ public class User implements HasId {
     @Override
     public String toString() {
         return """
-                {"id":"%s","name":"%s","password":"%s","email":"%s"}
-                """.formatted(id, username, password, email);
+                {"id":"%s","name":"%s","password":"%s","email":"%s", "role":"%s"}
+                """.formatted(id, username, password, email, role);
     }
 }

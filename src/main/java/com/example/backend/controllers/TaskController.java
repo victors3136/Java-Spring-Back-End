@@ -73,15 +73,15 @@ public class TaskController {
     }
 
 
-    @PostMapping("")
-    public ResponseEntity<UUID> postOneTask(@Valid @RequestBody @NotNull Task newTask, @RequestHeader("Authorization") String ignoredToken) {
+    @PostMapping
+    public ResponseEntity<UUID> postOneTask(@Valid @RequestBody @NotNull Task newTask, @RequestHeader("Authorization") String token) {
         System.out.println("POST /task");
         System.out.println(MessageFormat.format("Body: {0}", newTask));
         if (newTask.validationFails()) {
             System.out.println("validation failed");
             return ResponseEntity.badRequest().build();
         }
-        Task savedTask = taskService.save(newTask);
+        Task savedTask = taskService.save(newTask, token);
         return new ResponseEntity<>(savedTask.getId(), HttpStatus.CREATED);
     }
 
@@ -101,10 +101,6 @@ public class TaskController {
         return taskService.batchDelete(ids, token)
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
-    }
-
-    public Task addTask(Task newTask) {
-        return taskService.save(newTask);
     }
 }
 
