@@ -2,13 +2,14 @@ package com.example.backend.service;
 
 import com.example.backend.model.User;
 import com.example.backend.repository.UserRepository;
-import com.example.backend.requests.ChangePasswordRequest;
-import com.example.backend.requests.LoginRequest;
+import com.example.backend.utils.ChangePasswordRequest;
+import com.example.backend.utils.LoginRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -51,7 +52,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public boolean tryToRegister(User user) {
+    public boolean tryRegister(User user) {
         return source.findByUsername(user.getUsername())
                 .map(existing -> false)
                 .orElseGet(() -> {
@@ -61,7 +62,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public Optional<User> tryToLogIn(LoginRequest request) {
+    public Optional<User> tryLogin(LoginRequest request) {
         return source.findByUsername(request.username())
                 .filter(dbUserRow -> correctPassword(dbUserRow.getId(), request.password()));
     }
@@ -102,7 +103,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public boolean tryToChangePassword(ChangePasswordRequest request) {
+    public boolean tryChangePassword(ChangePasswordRequest request) {
         return source.findByUsername(request.username())
                 .filter(user -> correctPassword(user.getId(), request.oldPassword()))
                 .map(user -> {
@@ -111,5 +112,10 @@ public class UserService implements IUserService {
                     return true;
                 })
                 .orElse(false);
+    }
+
+    @Override
+    public List<String> getPermissions(UUID userId) {
+        return source.findPermissionsByUserId(userId);
     }
 }
