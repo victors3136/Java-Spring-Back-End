@@ -1,7 +1,6 @@
 package com.example.backend.controllers;
 
-import com.example.backend.exceptions.InvalidJWTException;
-import com.example.backend.exceptions.PermissionDeniedException;
+import com.example.backend.exceptions.HttpTokenException;
 import com.example.backend.model.User;
 import com.example.backend.service.IUserService;
 import com.example.backend.service.JSONWebTokenService;
@@ -34,10 +33,8 @@ public class UserController {
         System.out.println("GET /user/all");
         try {
             return ResponseEntity.ok(userService.getAllUsersSimplified(token));
-        } catch (InvalidJWTException ignored) {
-            return ResponseEntity.status(HttpStatus.NETWORK_AUTHENTICATION_REQUIRED).body("Username already taken");
-        } catch (PermissionDeniedException ignored) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Permission denied");
+        } catch (HttpTokenException e) {
+            return ResponseEntity.status(e.status().asHttp()).body(e.message());
         }
     }
 

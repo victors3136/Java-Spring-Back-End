@@ -1,23 +1,20 @@
 package com.example.backend.service;
 
+import com.example.backend.exceptions.HttpTokenException;
 import com.example.backend.model.Task;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface ITaskService extends EntityService<Task> {
     boolean taskBelongsToTokenHolder(Task task, String token);
 
-    Optional<Task> getForTokenHolderById(UUID id, String token);
+    Page<Task> getPage(int number, int size, String token) throws HttpTokenException;
 
-    Optional<Page<Task>> getPage(int number, int size, String token);
+    Task tryToUpdate(UUID id, Task task, String userToken) throws HttpTokenException;
 
-    HttpStatus tryToUpdate(UUID id, Task task, String userToken);
+    void tryToDelete(UUID id, String userToken) throws HttpTokenException;
 
-    HttpStatus tryToDelete(UUID id, String userToken);
-
-    HttpStatus batchDelete(List<UUID> ids, String userToken);
+    void batchDelete(List<UUID> ids, String userToken) throws HttpTokenException;
 }

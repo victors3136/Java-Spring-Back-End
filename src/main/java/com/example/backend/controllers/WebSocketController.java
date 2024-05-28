@@ -1,5 +1,6 @@
 package com.example.backend.controllers;
 
+import com.example.backend.model.Subtask;
 import com.example.backend.model.Task;
 import com.example.backend.service.SubtaskCreatorService;
 import com.example.backend.service.TaskCreatorService;
@@ -28,14 +29,19 @@ public class WebSocketController {
 
     //    @Scheduled(fixedDelay = 30_000, initialDelay = 10_000)
     public void sendNewEntry() {
-//        Task newTask = taskCreatorService.createEntity();
-//
-//        if (newTask != null)
-//            template.convertAndSend("/topic/newEntry", newTask);
+        Task newTask = taskCreatorService.createEntity();
+
+        if (newTask != null) {
+            template.convertAndSend("/topic/newEntry", newTask);
+        }
     }
 
     //    @Scheduled(fixedDelay = 25_000, initialDelay = 20_000)
     public void createSubentry() {
-        subtaskCreatorService.createEntity();
+        Subtask newSubtask = subtaskCreatorService.createEntity();
+
+        if (newSubtask != null) {
+            template.convertAndSend("/topic/newEntry", newSubtask);
+        }
     }
 }

@@ -1,26 +1,23 @@
 package com.example.backend.service;
 
-import com.example.backend.exceptions.InvalidJWTException;
-import com.example.backend.exceptions.NotFoundException;
-import com.example.backend.exceptions.PermissionDeniedException;
-import com.example.backend.exceptions.ValidationException;
+import com.example.backend.exceptions.HttpTokenException;
 import com.example.backend.model.Subtask;
 import org.springframework.data.domain.Page;
 
 import java.util.Collection;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface ISubtaskService extends EntityService<Subtask> {
     @SuppressWarnings("unused")
-    Optional<Page<Subtask>> getPage(int pageNumber, int pageSize, UUID taskID, String token);
+    Page<Subtask> getPage(int pageNumber, int pageSize, UUID taskID, String token) throws HttpTokenException;
 
-    long countSubtasksByTask(UUID id, String token) throws InvalidJWTException, PermissionDeniedException;
+    long countSubtasksByTask(UUID id, String token) throws HttpTokenException;
 
-    Subtask tryToUpdate(UUID id, Subtask subtask, String token) throws InvalidJWTException, PermissionDeniedException, NotFoundException, ValidationException;
+    Subtask tryToUpdate(UUID id, Subtask subtask, String token) throws HttpTokenException;
 
-    Subtask tryToDelete(UUID id, String token) throws InvalidJWTException, PermissionDeniedException, NotFoundException;
+    @SuppressWarnings("UnusedReturnValue")
+    Subtask tryToDelete(UUID id, String token) throws HttpTokenException;
 
-    Collection<Subtask> getForTask(UUID id, String token);
+    Collection<Subtask> getSubtasksForTask(UUID id, String token);
 
 }
