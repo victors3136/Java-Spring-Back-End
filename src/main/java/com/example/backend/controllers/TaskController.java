@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.springframework.http.HttpStatus.*;
+
 @RestController
 @Validated
 @RequestMapping("/task")
@@ -62,19 +64,23 @@ public class TaskController {
             System.out.println("Validation fails");
             return ResponseEntity.badRequest().build();
         }
-        if (!taskService.tryToUpdate(id, updatedTask, token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        return switch (taskService.tryToUpdate(id, updatedTask, token)) {
+            case OK -> {
+                var task = taskService.getById(id);
+                yield task.isPresent()
+                        ? ResponseEntity.ok(task.get())
+                        : ResponseEntity.notFound().build();
+            }
+            case NOT_FOUND -> ResponseEntity.notFound().build();
+            case UNAUTHORIZED -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("That is not yours to edit!");
-        }
-        var task = taskService.getById(id);
-        return task.isPresent()
-                ? ResponseEntity.ok(task.get())
-                : ResponseEntity.notFound().build();
+            default -> ResponseEntity.badRequest().build();
+        };
     }
 
 
     @PostMapping
-    public ResponseEntity<UUID> postOneTask(@Valid @RequestBody @NotNull Task newTask, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<String> postOneTask(@Valid @RequestBody @NotNull Task newTask, @RequestHeader("Authorization") String token) {
         System.out.println("POST /task");
         System.out.println(MessageFormat.format("Body: {0}", newTask));
         if (newTask.validationFails()) {
@@ -82,25 +88,45 @@ public class TaskController {
             return ResponseEntity.badRequest().build();
         }
         Task savedTask = taskService.save(newTask, token);
-        return new ResponseEntity<>(savedTask.getId(), HttpStatus.CREATED);
+        if (savedTask == null) {
+            return ResponseEntity.status(NETWORK_AUTHENTICATION_REQUIRED)
+                    .body("Session expired: Log in again and retry");
+        }
+        if (savedTask.getId() == null) {
+            return ResponseEntity.status(UNAUTHORIZED)
+                    .body("You are not allowed to add a new task");
+        }
+        return ResponseEntity.status(CREATED)
+                .body(savedTask.getId().toString());
     }
 
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOneTask(@PathVariable UUID id, @RequestHeader("Authorization") String token) {
         System.out.println(MessageFormat.format("DELETE /task/{0}", id));
-        return taskService.tryToDelete(id, token)
-                ? ResponseEntity.noContent().build()
-                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("That is not yours to delete!");
+        return switch (taskService.tryToDelete(id, token)) {
+            case NO_CONTENT -> ResponseEntity.noContent().build();
+            case NOT_FOUND -> ResponseEntity.notFound().build();
+            case NETWORK_AUTHENTICATION_REQUIRED -> ResponseEntity.status(NETWORK_AUTHENTICATION_REQUIRED)
+                    .body("Session expired: Log in again and retry");
+            case UNAUTHORIZED -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("That is not yours to delete!");
+            default -> ResponseEntity.badRequest().build();
+        };
     }
 
     @DeleteMapping("/batch")
-    public ResponseEntity<?> deleteTasksBatch(@RequestBody @NotNull List<UUID> ids, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<String> deleteTasksBatch
+            (@RequestBody @NotNull List<UUID> ids, @RequestHeader("Authorization") String token) {
         System.out.println("DELETE /task/batch");
         System.out.println(MessageFormat.format("Body: [{0}]", ids.stream().map(UUID::toString).reduce("", (s1, s2) -> s1 + ", " + s2)));
-        return taskService.batchDelete(ids, token)
-                ? ResponseEntity.noContent().build()
-                : ResponseEntity.notFound().build();
+        return switch (taskService.batchDelete(ids, token)) {
+            case NO_CONTENT -> ResponseEntity.noContent().build();
+            case NOT_FOUND -> ResponseEntity.notFound().build();
+
+            case UNAUTHORIZED -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("You tried deleting some tasks that do not belong to you!");
+            default -> ResponseEntity.badRequest().build();
+        };
     }
 }
 

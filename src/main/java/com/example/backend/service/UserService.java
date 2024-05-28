@@ -1,47 +1,38 @@
 package com.example.backend.service;
 
+import com.example.backend.exceptions.InvalidJWTException;
+import com.example.backend.exceptions.PermissionDeniedException;
+import com.example.backend.model.SimplifiedUser;
 import com.example.backend.model.User;
+import com.example.backend.repository.RoleRepository;
 import com.example.backend.repository.UserRepository;
-import com.example.backend.utils.ChangePasswordRequest;
 import com.example.backend.utils.LoginRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService implements IUserService {
     private final UserRepository source;
+    private final RoleRepository roles;
     private final PasswordEncoder passwordEncoder;
+    private final JSONWebTokenService jwtService;
+    private final UserPermissionService userPermissionService;
 
     @Autowired
-    public UserService(UserRepository source, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository source,
+                       PasswordEncoder passwordEncoder,
+                       RoleRepository roles,
+                       JSONWebTokenService jwtService,
+                       UserPermissionService userPermissionService) {
         this.source = source;
         this.passwordEncoder = passwordEncoder;
-    }
-
-    @Override
-    public Collection<User> findByEmail(String email) {
-        return source.findByEmail(email);
-    }
-
-    @Override
-    public Optional<User> findByUsername(String username) {
-        return source.findByUsername(username);
-    }
-
-    @Override
-    public boolean existsByUsername(String username) {
-        return source.existsByUsername(username);
-    }
-
-    @Override
-    public boolean existsByEmail(String email) {
-        return source.existsByEmail(email);
+        this.roles = roles;
+        this.jwtService = jwtService;
+        this.userPermissionService = userPermissionService;
     }
 
     @Override
@@ -56,7 +47,8 @@ public class UserService implements IUserService {
         return source.findByUsername(user.getUsername())
                 .map(existing -> false)
                 .orElseGet(() -> {
-                    this.save(user);
+                    user.setRole(roles.getByName("user"));
+                    save(user);
                     return true;
                 });
     }
@@ -88,34 +80,26 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public Optional<User> update(User entity) {
-        source.updateUserById(entity.getId(),
-                entity.getUsername(),
-                entity.getEmail(),
-                passwordEncoder.encode(entity.getPassword()));
-        return source.findById(entity.getId());
-    }
-
-    @Override
-    public User delete(User entity) {
-        source.deleteById(entity.getId());
-        return entity;
-    }
-
-    @Override
-    public boolean tryChangePassword(ChangePasswordRequest request) {
-        return source.findByUsername(request.username())
-                .filter(user -> correctPassword(user.getId(), request.oldPassword()))
-                .map(user -> {
-                    user.setPassword(passwordEncoder.encode(request.newPassword()));
-                    source.save(user);
-                    return true;
-                })
-                .orElse(false);
-    }
-
-    @Override
     public List<String> getPermissions(UUID userId) {
         return source.findPermissionsByUserId(userId);
+    }
+
+    @Override
+    public List<SimplifiedUser> getAllUsersSimplified(String token) throws InvalidJWTException, PermissionDeniedException {
+        if (token == null || jwtService.hasExpired(token)) {
+            throw new InvalidJWTException();
+        }
+        UUID id = jwtService.parse(token);
+        if (!userPermissionService.canAssign(id)) {
+            throw new PermissionDeniedException();
+        }
+        var roleIDToName = this.roles.findAll().stream()
+                .map(role -> new AbstractMap.SimpleImmutableEntry<>(role.getId(), role.getName()))
+                .collect(Collectors.toMap(AbstractMap.SimpleImmutableEntry::getKey, AbstractMap.SimpleImmutableEntry::getValue));
+        return getAll().stream()
+                .map(user -> new SimplifiedUser(user.getId(),
+                        user.getUsername(),
+                        roleIDToName.get(user.getRole())))
+                .toList();
     }
 }

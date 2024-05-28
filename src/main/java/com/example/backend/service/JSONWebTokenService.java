@@ -1,58 +1,59 @@
 package com.example.backend.service;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import org.jetbrains.annotations.Contract;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
-import java.util.Date;
 import java.util.UUID;
+import java.util.function.Function;
 
 @Service
 public class JSONWebTokenService {
 
-    private final String hashingKey;
+    private final Key key;
+    private final JwtParser parser;
+    private final JwtBuilder builder;
+    private final Function<String, Claims> decodeTokenBody;
+    private final Function<UUID, String> encodeTokenBody;
 
-    public JSONWebTokenService(@Value("${jwt.key}") String hashingKey) {
-        this.hashingKey = hashingKey;
+    private String stripBearer(String token) {
+        return token.replace("Bearer ", "");
     }
 
-    @Contract(pure = true)
-    public String encode(UUID userID) {
-        String id = userID.toString();
-        Key key = new SecretKeySpec(hashingKey.getBytes(), SignatureAlgorithm.HS256.getJcaName());
-        return Jwts.builder()
-                .setSubject(id)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis()
-                                 /*  1_000   milliseconds/second
-                                  *     60   seconds/minute
-                                  *     60   minutes/hour
-                                  *     10   hours
-                         _________________________________ */
-                        /*=*/ + 36_000_000 /* milliseconds */))
+    public JSONWebTokenService(@Value("${jwt.key}") String hashingKey) {
+        byte[] keyBytes = hashingKey.getBytes();
+        this.key = new SecretKeySpec(keyBytes, SignatureAlgorithm.HS256.getJcaName());
+        this.parser = Jwts.parserBuilder()
+                .setSigningKey(Keys.hmacShaKeyFor(keyBytes))
+                .build();
+        this.builder = Jwts.builder();
+        this.decodeTokenBody = (String token) -> (Claims) parser.parse(stripBearer(token)).getBody();
+        this.encodeTokenBody = (UUID id) -> builder.setSubject(id.toString())
+                .setIssuedAt(TokenTimespanService.buildIssueDate())
+                .setExpiration(TokenTimespanService.buildExpirationDate())
                 .signWith(key)
                 .compact();
     }
 
-    @Contract(pure = true)
-    public UUID decode(String token) {
-        return UUID.fromString(
-                Jwts.parserBuilder()
-                        .setSigningKey(
-                                Keys.hmacShaKeyFor(hashingKey.getBytes()))
-                        .build()
-                        .parseClaimsJws(token)
-                        .getBody()
-                        .getSubject());
+
+    public String encode(UUID userID) throws JwtException {
+        return this.encodeTokenBody.apply(userID);
     }
 
-    @Contract(pure = true)
+    public UUID decode(String token) throws JwtException {
+        return UUID.fromString(decodeTokenBody.apply(token).getSubject());
+    }
+
+    public boolean hasExpired(String token) {
+        return decodeTokenBody.apply(token)
+                .getExpiration()
+                .before(TokenTimespanService.currentTime());
+    }
+
     public UUID parse(String token) {
-        return decode(token.replace("Bearer ", ""));
+        return decode(stripBearer(token));
     }
 }

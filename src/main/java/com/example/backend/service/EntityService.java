@@ -11,10 +11,4 @@ public interface EntityService<Generic> {
     Optional<Generic> getById(UUID id);
 
     Generic save(Generic entity);
-
-    @SuppressWarnings("unused")
-    Optional<Generic> update(Generic entity);
-
-    @SuppressWarnings("unused")
-    Generic delete(Generic entity);
 }

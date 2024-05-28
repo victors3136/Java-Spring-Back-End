@@ -1,9 +1,10 @@
 package com.example.backend.controllers;
 
+import com.example.backend.exceptions.InvalidJWTException;
+import com.example.backend.exceptions.PermissionDeniedException;
 import com.example.backend.model.User;
 import com.example.backend.service.IUserService;
 import com.example.backend.service.JSONWebTokenService;
-import com.example.backend.utils.ChangePasswordRequest;
 import com.example.backend.utils.LoginRequest;
 import com.example.backend.utils.LoginResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +23,22 @@ public class UserController {
     private final JSONWebTokenService jwtService;
 
     @Autowired
-    public UserController(IUserService userService, JSONWebTokenService jwtService) {
+    public UserController(IUserService userService,
+                          JSONWebTokenService jwtService) {
         this.userService = userService;
         this.jwtService = jwtService;
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllUsers(@RequestHeader("Authorization") String token) {
+        System.out.println("GET /user/all");
+        try {
+            return ResponseEntity.ok(userService.getAllUsersSimplified(token));
+        } catch (InvalidJWTException ignored) {
+            return ResponseEntity.status(HttpStatus.NETWORK_AUTHENTICATION_REQUIRED).body("Username already taken");
+        } catch (PermissionDeniedException ignored) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Permission denied");
+        }
     }
 
     @PostMapping("/register")
@@ -54,23 +68,11 @@ public class UserController {
             return ResponseEntity.ok()
                     .body(new LoginResponse(
                             jwtService.encode(id),
+                            id,
                             userService.getPermissions(id)));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(e.getMessage());
-        }
-    }
-
-    @PatchMapping("/change_password")
-    public ResponseEntity<String> changePassword(@RequestBody ChangePasswordRequest changePasswordRequest) {
-        System.out.println("PATCH user/change_password");
-        System.out.println(changePasswordRequest);
-        try {
-            return userService.tryChangePassword(changePasswordRequest)
-                    ? ResponseEntity.ok().body("Password changed successfully")
-                    : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

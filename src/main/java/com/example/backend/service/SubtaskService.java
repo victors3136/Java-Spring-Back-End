@@ -37,21 +37,6 @@ public class SubtaskService implements ISubtaskService {
     }
 
     @Override
-    public Optional<Subtask> update(Subtask entity) {
-        source.updateSubtaskById(
-                entity.getId(),
-                entity.getSubject(),
-                entity.getTask());
-        return source.findById(entity.getId());
-    }
-
-    @Override
-    public Subtask delete(Subtask entity) {
-        source.deleteById(entity.getId());
-        return entity;
-    }
-
-    @Override
     public Optional<Page<Subtask>> getPage(int pageNumber, int pageSize, UUID taskID) {
         if (pageNumber < 0 || pageSize < 0 || taskID == null) {
             return Optional.empty();
