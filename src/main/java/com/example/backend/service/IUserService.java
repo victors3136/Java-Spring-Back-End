@@ -6,11 +6,15 @@ import com.example.backend.model.SimplifiedUser;
 import com.example.backend.model.User;
 import com.example.backend.utils.LoginRequest;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface IUserService extends EntityService<User> {
+public interface IUserService {
+    Collection<User> getAll();
+
+    User save(User entity);
 
     boolean correctPassword(UUID id, String rawPassword);
 

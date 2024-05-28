@@ -35,13 +35,13 @@ public class TaskCreatorService {
         this.taskService = taskService;
     }
 
-    public Task createEntity() {
-        Task newTask = new Task(
-                activities[(int) (generator % activities.length)] + " @ " + subjects[(int) (generator % subjects.length)],
-                "None provided",
-                (byte) (generator % 10 + 1),
-                Instant.now().plus((((generator++) % 10) + (random.nextInt() % 10) - 5), ChronoUnit.DAYS),
-                UUID.randomUUID());
-        return taskService.save(newTask);
+    public void createEntity() {
+//        Task newTask = new Task(
+//                activities[(int) (generator % activities.length)] + " @ " + subjects[(int) (generator % subjects.length)],
+//                "None provided",
+//                (byte) (generator % 10 + 1),
+//                Instant.now().plus((((generator++) % 10) + (random.nextInt() % 10) - 5), ChronoUnit.DAYS),
+//                UUID.randomUUID());
+//         taskService.save(newTask);
     }
 }

@@ -2,6 +2,7 @@ package com.example.backend.service;
 
 import com.example.backend.model.Subtask;
 import com.example.backend.model.Task;
+import com.example.backend.utils.LoginRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -27,14 +28,14 @@ public class SubtaskCreatorService {
     }
 
     public void createEntity() {
-        List<Task> tasksList = taskService.getAll().stream().toList();
-        if (tasksList.isEmpty()) {
-            return;
-        }
-        Subtask newSubtask = new Subtask(
-                subjects[(int) (generator % subjects.length)],
-                tasksList.get((int) ((generator++) % tasksList.size())).getId()
-        );
-        subtaskService.save(newSubtask);
+//        List<Task> tasksList = taskService.getAll().stream().toList();
+//        if (tasksList.isEmpty()) {
+//            return;
+//        }
+//        Subtask newSubtask = new Subtask(
+//                subjects[(int) (generator % subjects.length)],
+//                tasksList.get((int) ((generator++) % tasksList.size())).getId()
+//        );
+//        subtaskService.save(newSubtask);
     }
 }

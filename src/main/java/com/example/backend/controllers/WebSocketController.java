@@ -28,10 +28,10 @@ public class WebSocketController {
 
     //    @Scheduled(fixedDelay = 30_000, initialDelay = 10_000)
     public void sendNewEntry() {
-        Task newTask = taskCreatorService.createEntity();
-
-        if (newTask != null)
-            template.convertAndSend("/topic/newEntry", newTask);
+//        Task newTask = taskCreatorService.createEntity();
+//
+//        if (newTask != null)
+//            template.convertAndSend("/topic/newEntry", newTask);
     }
 
     //    @Scheduled(fixedDelay = 25_000, initialDelay = 20_000)

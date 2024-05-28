@@ -1,11 +1,14 @@
 package com.example.backend.service;
 
+import com.example.backend.model.Subtask;
 import com.example.backend.model.Task;
+import com.example.backend.repository.TaskRepository;
 import com.example.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -13,10 +16,12 @@ import java.util.function.Function;
 @Service
 public class UserPermissionService {
     private final Function<UUID, List<String>> getUserPermissions;
+    private final Function<UUID, Optional<Task>> tryGetParentTaskForSubtask;
 
     @Autowired
-    UserPermissionService(UserRepository userRepository) {
+    UserPermissionService(UserRepository userRepository, TaskRepository taskRepository) {
         getUserPermissions = userRepository::findPermissionsByUserId;
+        tryGetParentTaskForSubtask = taskRepository::findById;
     }
 
     public boolean canCreate(UUID user) {
@@ -45,8 +50,24 @@ public class UserPermissionService {
         return false;
     }
 
+    public boolean canUpdate(UUID user, Subtask subtask) {
+        return canUpdate(user, subtask, getUserPermissions.apply(user));
+    }
+
+    public boolean canUpdate(UUID user, Subtask subtask, List<String> permissions) {
+        if (permissions.contains("edit-any")) return true;
+        if (permissions.contains("edit-own")) {
+            var parentTask = tryGetParentTaskForSubtask.apply(subtask.getId());
+            return parentTask.isPresent() && parentTask.get().getUser().equals(user);
+        }
+        return false;
+    }
+
     public boolean canDelete(Task task, UUID user) {
         return canDelete(task, user, getUserPermissions.apply(user));
+    }
+    public boolean canDelete(Subtask subtask, UUID user) {
+        return canDelete(subtask, user, getUserPermissions.apply(user));
     }
 
     public boolean canDelete(Task task, UUID user, List<String> permissions) {
@@ -54,7 +75,14 @@ public class UserPermissionService {
         if (permissions.contains("delete-own")) return task.getUser().equals(user);
         return false;
     }
-
+    public boolean canDelete(Subtask subtask, UUID user, List<String> permissions) {
+        if (permissions.contains("delete-any")) return true;
+        if (permissions.contains("delete-own")){
+            var parentTask = tryGetParentTaskForSubtask.apply(subtask.getId());
+            return parentTask.isPresent() && parentTask.get().getUser().equals(user);
+        }
+        return false;
+    }
     public boolean canDeleteBatch(UUID user) {
         return canDeleteBatch(getUserPermissions.apply(user));
     }

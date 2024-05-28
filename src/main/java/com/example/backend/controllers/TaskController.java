@@ -41,9 +41,9 @@ public class TaskController {
 
 
     @GetMapping("/all")
-    public ResponseEntity<List<Task>> getAllTasks(@RequestHeader("Authorization") String ignoredToken) {
+    public ResponseEntity<List<Task>> getAllTasks(@RequestHeader("Authorization") String token) {
         System.out.println("GET /task/all");
-        return ResponseEntity.ok(taskService.getAll().stream().toList());
+        return ResponseEntity.ok(taskService.getAll(token).stream().toList());
     }
 
     @GetMapping("/all/{id}")
@@ -66,7 +66,7 @@ public class TaskController {
         }
         return switch (taskService.tryToUpdate(id, updatedTask, token)) {
             case OK -> {
-                var task = taskService.getById(id);
+                var task = taskService.getById(id, token);
                 yield task.isPresent()
                         ? ResponseEntity.ok(task.get())
                         : ResponseEntity.notFound().build();

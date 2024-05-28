@@ -39,12 +39,12 @@ public class TaskService implements ITaskService {
     }
 
     @Override
-    public Collection<Task> getAll() {
+    public Collection<Task> getAll(String token) {
         return taskSource.findAll();
     }
 
     @Override
-    public Optional<Task> getById(UUID id) {
+    public Optional<Task> getById(UUID id, String token) {
         return taskSource.findById(id);
     }
 
@@ -65,17 +65,6 @@ public class TaskService implements ITaskService {
                                 .equal(task.get("user"),
                                         jwtService.parse(userToken)),
                         PageRequest.of(pageNumber, pageSize)));
-    }
-
-    @Override
-    public Task save(Task entity) {
-        Task newTask = new Task();
-        newTask.setUser(entity.getUser());
-        newTask.setName(entity.getName());
-        newTask.setDescription(entity.getDescription());
-        newTask.setPriority(entity.getPriority());
-        newTask.setDueDate(entity.getDueDate());
-        return taskSource.save(newTask);
     }
 
     @Override

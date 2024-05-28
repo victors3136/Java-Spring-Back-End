@@ -23,4 +23,13 @@ public interface SubtaskRepository extends JpaRepository<Subtask, UUID>, JpaSpec
             """,
             nativeQuery = true)
     long countSubtasksByTask(@Param("id") UUID id);
+
+    @Query(value = """
+            -- noinspection SqlResolve
+            select t_user
+            from sdi_subtask inner join sdi_task on s_task = t_id
+            where s_id = :id
+            """,
+            nativeQuery = true)
+    UUID findParentTaskAuthor(UUID uuid);
 }

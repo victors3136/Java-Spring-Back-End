@@ -17,8 +17,6 @@ public interface ITaskService extends EntityService<Task> {
 
     HttpStatus tryToUpdate(UUID id, Task task, String userToken);
 
-    Task save(Task task, String userToken);
-
     HttpStatus tryToDelete(UUID id, String userToken);
 
     HttpStatus batchDelete(List<UUID> ids, String userToken);

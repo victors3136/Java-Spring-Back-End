@@ -65,11 +65,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public Optional<User> getById(UUID id) {
-        return source.findById(id);
-    }
-
-    @Override
     public User save(User entity) {
         User newUser = new User();
         newUser.setId(entity.getId());
