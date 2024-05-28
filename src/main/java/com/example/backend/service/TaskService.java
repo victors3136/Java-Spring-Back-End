@@ -1,7 +1,10 @@
 package com.example.backend.service;
 
+import com.example.backend.exceptions.FailureReason;
+import com.example.backend.exceptions.HttpTokenException;
 import com.example.backend.model.Task;
 import com.example.backend.repository.TaskRepository;
+import com.example.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -9,19 +12,25 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
+
+import static com.example.backend.exceptions.FailureReason.*;
 
 @Service
 public class TaskService implements ITaskService {
     private final JSONWebTokenService jwtService;
-    private final TaskRepository source;
+    private final TaskRepository taskSource;
+    private final UserRepository users;
+    private final UserPermissionService userPermissionService;
 
     @Autowired
-    public TaskService(TaskRepository source, JSONWebTokenService jwtService) {
-        this.source = source;
+    public TaskService(TaskRepository taskSource, JSONWebTokenService jwtService, UserRepository users, UserPermissionService userPermissionService) {
+        this.taskSource = taskSource;
         this.jwtService = jwtService;
+        this.users = users;
+        this.userPermissionService = userPermissionService;
     }
+
 
     @Override
     public boolean taskBelongsToTokenHolder(Task task, String token) {
@@ -29,119 +38,130 @@ public class TaskService implements ITaskService {
     }
 
     @Override
-    public Collection<Task> getAllForTokenHolder(String token) {
-        return source.findByUserId(jwtService.parse(token));
-    }
-
-    @Override
-    public Collection<Task> getAll() {
-        return source.findAll();
-    }
-
-    @Override
-    public Optional<Task> getById(UUID id) {
-        return source.findById(id);
-    }
-
-    @Override
-    public Optional<Task> getForTokenHolderById(UUID id, String token) {
-        return source.findById(id)
-                .filter(task -> taskBelongsToTokenHolder(task, token));
-    }
-
-    @Override
-    public Optional<Page<Task>> getPage(int pageNumber, int pageSize, String userToken) {
-        if (pageNumber < 0 || pageSize < 0 || userToken == null) {
-            return Optional.empty();
+    public Collection<Task> getAll(String token) throws HttpTokenException {
+        if (jwtService.hasExpired(token)) {
+            throw new HttpTokenException(JWT_EXPIRED);
         }
-        return Optional.of(
-                source.findAll(
-                        (task, query, where) -> where
-                                .equal(task.get("user"),
-                                        jwtService.parse(userToken)),
-                        PageRequest.of(pageNumber, pageSize)));
+        if (userPermissionService.canRead(jwtService.parse(token))) {
+            throw new HttpTokenException(PERMISSION_DENIED);
+        }
+        return taskSource.findAll();
     }
 
     @Override
-    public Task save(Task entity) {
-        Task newTask = new Task();
-        newTask.setUser(entity.getUser());
-        newTask.setName(entity.getName());
-        newTask.setDescription(entity.getDescription());
-        newTask.setPriority(entity.getPriority());
-        newTask.setDueDate(entity.getDueDate());
-        return source.save(newTask);
+    public Task getById(UUID id, String token) throws HttpTokenException {
+        if (jwtService.hasExpired(token)) {
+            throw new HttpTokenException(JWT_EXPIRED);
+        }
+        if (userPermissionService.canRead(jwtService.parse(token))) {
+            throw new HttpTokenException(PERMISSION_DENIED);
+        }
+        var task = taskSource.findById(id);
+        if (task.isEmpty()) {
+            throw new HttpTokenException(FailureReason.NOT_FOUND);
+        }
+        return task.get();
     }
 
     @Override
-    public Optional<Task> update(Task entity) {
-        source.updateTaskById(
-                entity.getId(),
-                entity.getName(),
-                entity.getDescription(),
-                entity.getPriority(),
-                entity.getDueDate(),
-                entity.getUser());
-        return source.findById(entity.getId());
+    public Page<Task> getPage(int pageNumber, int pageSize, String userToken) throws HttpTokenException {
+        if (pageNumber < 0 || pageSize < 0 || userToken == null) {
+            throw new HttpTokenException(VALIDATION_FAILED, "Requesting an absurd scenario -- page nr: %d, page size:%s, token :%s".formatted(pageNumber, pageSize, userToken));
+        }
+        if (jwtService.hasExpired(userToken)) {
+            throw new HttpTokenException(JWT_EXPIRED);
+        }
+        if (!userPermissionService.canRead(jwtService.parse(userToken))) {
+            throw new HttpTokenException(PERMISSION_DENIED);
+        }
+        return taskSource.findAll(
+                (task, query, where) -> where.equal(task.get("user"), jwtService.parse(userToken)),
+                PageRequest.of(pageNumber, pageSize));
     }
 
     @Override
-    public Task delete(Task entity) {
-        source.deleteById(entity.getId());
-        return entity;
+    public Task tryToUpdate(UUID id, Task task, String userToken) throws HttpTokenException {
+        if (task.validationFails()) {
+            throw new HttpTokenException(VALIDATION_FAILED);
+        }
+        if (jwtService.hasExpired(userToken)) {
+            throw new HttpTokenException(JWT_EXPIRED);
+        }
+        var toUpdate = taskSource.findById(id)
+                .filter(maybeTask -> taskBelongsToTokenHolder(maybeTask, userToken));
+        if (toUpdate.isEmpty()) {
+            throw new HttpTokenException(FailureReason.NOT_FOUND);
+        }
+        if (!userPermissionService.canUpdate(jwtService.parse(userToken), toUpdate.get())) {
+            throw new HttpTokenException(PERMISSION_DENIED);
+        }
+        Task updated = new Task();
+        updated.setId(toUpdate.get().getId());
+        updated.setName(task.getName());
+        updated.setDescription(task.getDescription());
+        updated.setPriority(task.getPriority());
+        updated.setDueDate(task.getDueDate());
+        updated.setUser(jwtService.parse(userToken));
+        return taskSource.save(updated);
     }
 
     @Override
-    public boolean tryToUpdate(UUID id, Task task, String userToken) {
-        return source.findById(id)
-                .filter(toUpdate -> taskBelongsToTokenHolder(toUpdate, userToken))
-                .map(toUpdate -> {
-                    Task updated = new Task();
-                    updated.setId(toUpdate.getId());
-                    updated.setName(task.getName());
-                    updated.setDescription(task.getDescription());
-                    updated.setPriority(task.getPriority());
-                    updated.setDueDate(task.getDueDate());
-                    updated.setUser(jwtService.parse(userToken));
-                    source.save(updated);
-                    return true;
-                })
-                .orElse(false);
-    }
-
-    @Override
-    public Task save(Task task, String token) {
-        UUID authorID = jwtService.parse(token);
+    public Task save(Task task, String userToken) throws HttpTokenException {
+        if (jwtService.hasExpired(userToken)) {
+            return null;
+        }
+        if (task.validationFails()) {
+            throw new HttpTokenException(VALIDATION_FAILED);
+        }
+        UUID authorID = jwtService.parse(userToken);
+        if (!userPermissionService.canCreate(authorID)) {
+            Task newTask = new Task();
+            newTask.setId(null);
+            return newTask;
+        }
         Task newTask = new Task();
         newTask.setName(task.getName());
         newTask.setDescription(task.getDescription());
         newTask.setPriority(task.getPriority());
         newTask.setDueDate(task.getDueDate());
         newTask.setUser(authorID);
-        return source.save(newTask);
+        return taskSource.save(newTask);
     }
 
     @Override
-    public boolean tryToDelete(UUID id, String userToken) {
-        return source.findById(id)
-                .filter(task -> taskBelongsToTokenHolder(task, userToken))
-                .map(task -> {
-                    source.delete(task);
-                    return true;
-                })
-                .orElse(false);
+    public void tryToDelete(UUID id, String userToken) throws HttpTokenException {
+        if (jwtService.hasExpired(userToken)) {
+            throw new HttpTokenException(JWT_EXPIRED);
+        }
+        var maybeTask = taskSource.findById(id);
+        if (maybeTask.isEmpty()) {
+            throw new HttpTokenException(FailureReason.NOT_FOUND);
+        }
+        var task = maybeTask.get();
+        var user = jwtService.parse(userToken);
+        if (!userPermissionService.canDelete(task, user)) {
+            throw new HttpTokenException(PERMISSION_DENIED);
+        }
+        taskSource.delete(task);
     }
 
     @Override
-    public boolean batchDelete(List<UUID> ids, String userToken) {
-        var idsOfTasksThatCanBeDeleted = source.findAllById(ids)
+    public void batchDelete(List<UUID> ids, String userToken) throws HttpTokenException {
+        if (jwtService.hasExpired(userToken)) {
+            throw new HttpTokenException(JWT_EXPIRED);
+        }
+        var user = jwtService.parse(userToken);
+        List<String> permissions = users.findPermissionsByUserId(user);
+        if (userPermissionService.canDeleteBatch(user)) {
+            throw new HttpTokenException(JWT_EXPIRED);
+        }
+        var idsOfTasksThatCanBeDeleted = taskSource.findAllById(ids)
                 .stream()
-                .filter(task -> taskBelongsToTokenHolder(task, userToken))
+                .filter(task -> userPermissionService.canDelete(task, user, permissions))
                 .toList();
         if (idsOfTasksThatCanBeDeleted.isEmpty()) {
-            return false;
+            throw new HttpTokenException(FailureReason.NOT_FOUND);
         }
-        source.deleteAllInBatch(idsOfTasksThatCanBeDeleted);
-        return true;
+        taskSource.deleteAllInBatch(idsOfTasksThatCanBeDeleted);
     }
 }

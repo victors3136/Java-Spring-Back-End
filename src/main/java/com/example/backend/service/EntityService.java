@@ -1,20 +1,15 @@
 package com.example.backend.service;
 
+import com.example.backend.exceptions.HttpTokenException;
+
 import java.util.Collection;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface EntityService<Generic> {
 
-    Collection<Generic> getAll();
+    Collection<Generic> getAll(String token) throws HttpTokenException;
 
-    Optional<Generic> getById(UUID id);
+    Generic getById(UUID id, String token) throws HttpTokenException;
 
-    Generic save(Generic entity);
-
-    @SuppressWarnings("unused")
-    Optional<Generic> update(Generic entity);
-
-    @SuppressWarnings("unused")
-    Generic delete(Generic entity);
+    Generic save(Generic entity, String token) throws HttpTokenException;
 }

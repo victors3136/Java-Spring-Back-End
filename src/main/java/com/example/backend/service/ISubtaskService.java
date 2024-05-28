@@ -1,21 +1,23 @@
 package com.example.backend.service;
 
+import com.example.backend.exceptions.HttpTokenException;
 import com.example.backend.model.Subtask;
 import org.springframework.data.domain.Page;
 
 import java.util.Collection;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface ISubtaskService extends EntityService<Subtask> {
     @SuppressWarnings("unused")
-    Optional<Page<Subtask>> getPage(int pageNumber, int pageSize, UUID taskID);
+    Page<Subtask> getPage(int pageNumber, int pageSize, UUID taskID, String token) throws HttpTokenException;
 
-    long countSubtasksByTask(UUID id);
+    long countSubtasksByTask(UUID id, String token) throws HttpTokenException;
 
-    boolean tryToUpdate(UUID id, Subtask subtask);
+    Subtask tryToUpdate(UUID id, Subtask subtask, String token) throws HttpTokenException;
 
-    boolean tryToDelete(UUID id);
+    @SuppressWarnings("UnusedReturnValue")
+    Subtask tryToDelete(UUID id, String token) throws HttpTokenException;
 
-    Collection<Subtask> getForTask(UUID id);
+    Collection<Subtask> getSubtasksForTask(UUID id, String token);
+
 }

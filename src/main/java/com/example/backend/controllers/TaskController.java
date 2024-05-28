@@ -1,11 +1,11 @@
 package com.example.backend.controllers;
 
+import com.example.backend.exceptions.HttpTokenException;
 import com.example.backend.model.Task;
 import com.example.backend.service.TaskService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -13,8 +13,9 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.text.MessageFormat;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
+
+import static org.springframework.http.HttpStatus.CREATED;
 
 @RestController
 @Validated
@@ -31,25 +32,32 @@ public class TaskController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getOneTask(@PathVariable UUID id, @RequestHeader("Authorization") String token) {
         System.out.println(MessageFormat.format("GET /task/{0}", id));
-        Optional<Task> task = taskService.getForTokenHolderById(id, token);
-        return task.isPresent()
-                ? ResponseEntity.ok(task.get())
-                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("That is not yours to see!");
+        try {
+            return ResponseEntity.ok(taskService.getById(id, token));
+        } catch (HttpTokenException e) {
+            return ResponseEntity.status(e.status().asHttp()).body(e.getMessage());
+        }
     }
 
 
     @GetMapping("/all")
-    public ResponseEntity<List<Task>> getAllTasks(@RequestHeader("Authorization") String ignoredToken) {
+    public ResponseEntity<List<Task>> getAllTasks(@RequestHeader("Authorization") String token) {
         System.out.println("GET /task/all");
-        return ResponseEntity.ok(taskService.getAll().stream().toList());
+        try {
+            return ResponseEntity.ok(taskService.getAll(token).stream().toList());
+        } catch (HttpTokenException e) {
+            return ResponseEntity.status(e.status().asHttp()).body(null);
+        }
     }
 
     @GetMapping("/all/{id}")
     public ResponseEntity<Page<Task>> getTaskPage(@PathVariable int id, @RequestHeader("Authorization") String token) {
         System.out.println(MessageFormat.format("GET /task/all/{0}", id));
-        return taskService.getPage(id, 6, token)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.badRequest().build());
+        try {
+            return ResponseEntity.ok(taskService.getPage(id, 6, token));
+        } catch (HttpTokenException e) {
+            return ResponseEntity.status(e.status().asHttp()).body(null);
+        }
     }
 
 
@@ -57,50 +65,48 @@ public class TaskController {
     public ResponseEntity<?> patchOneTask(@PathVariable UUID id, @RequestHeader("Authorization") String token, @Valid @RequestBody @NotNull Task updatedTask) {
         System.out.println(MessageFormat.format("PATCH /task/{0}", id));
         System.out.println(MessageFormat.format("Body: {0}", updatedTask));
-
-        if (updatedTask.validationFails()) {
-            System.out.println("Validation fails");
-            return ResponseEntity.badRequest().build();
+        try {
+            return ResponseEntity.ok(taskService.tryToUpdate(id, updatedTask, token));
+        } catch (HttpTokenException e) {
+            return ResponseEntity.status(e.status().asHttp()).body(e.getMessage());
         }
-        if (!taskService.tryToUpdate(id, updatedTask, token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("That is not yours to edit!");
-        }
-        var task = taskService.getById(id);
-        return task.isPresent()
-                ? ResponseEntity.ok(task.get())
-                : ResponseEntity.notFound().build();
     }
 
 
     @PostMapping
-    public ResponseEntity<UUID> postOneTask(@Valid @RequestBody @NotNull Task newTask, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<String> postOneTask(@Valid @RequestBody @NotNull Task newTask, @RequestHeader("Authorization") String token) {
         System.out.println("POST /task");
         System.out.println(MessageFormat.format("Body: {0}", newTask));
-        if (newTask.validationFails()) {
-            System.out.println("validation failed");
-            return ResponseEntity.badRequest().build();
+        try {
+            return ResponseEntity.status(CREATED).body(taskService.save(newTask, token).getId().toString());
+        } catch (HttpTokenException e) {
+            return ResponseEntity.status(e.status().asHttp()).body(e.getMessage());
         }
-        Task savedTask = taskService.save(newTask, token);
-        return new ResponseEntity<>(savedTask.getId(), HttpStatus.CREATED);
     }
 
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOneTask(@PathVariable UUID id, @RequestHeader("Authorization") String token) {
         System.out.println(MessageFormat.format("DELETE /task/{0}", id));
-        return taskService.tryToDelete(id, token)
-                ? ResponseEntity.noContent().build()
-                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("That is not yours to delete!");
+        try {
+            taskService.tryToDelete(id, token);
+        } catch (HttpTokenException e) {
+            return ResponseEntity.status(e.status().asHttp()).body(e.getMessage());
+        }
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/batch")
-    public ResponseEntity<?> deleteTasksBatch(@RequestBody @NotNull List<UUID> ids, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<String> deleteTasksBatch
+            (@RequestBody @NotNull List<UUID> ids, @RequestHeader("Authorization") String token) {
         System.out.println("DELETE /task/batch");
         System.out.println(MessageFormat.format("Body: [{0}]", ids.stream().map(UUID::toString).reduce("", (s1, s2) -> s1 + ", " + s2)));
-        return taskService.batchDelete(ids, token)
-                ? ResponseEntity.noContent().build()
-                : ResponseEntity.notFound().build();
+        try {
+            taskService.batchDelete(ids, token);
+        } catch (HttpTokenException e) {
+            return ResponseEntity.status(e.status().asHttp()).body(e.getMessage());
+        }
+        return ResponseEntity.noContent().build();
     }
 }
 

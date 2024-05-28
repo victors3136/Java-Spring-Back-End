@@ -5,10 +5,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.UUID;
 
+@Repository
 public interface SubtaskRepository extends JpaRepository<Subtask, UUID>, JpaSpecificationExecutor<Subtask> {
 
     Collection<Subtask> findByTask(UUID sTask);
@@ -24,12 +26,10 @@ public interface SubtaskRepository extends JpaRepository<Subtask, UUID>, JpaSpec
 
     @Query(value = """
             -- noinspection SqlResolve
-            update sdi_subtask
-            set s_subject = :subject,
-                s_task = :task
-            where s_id = :id;
-            """, nativeQuery = true)
-    void updateSubtaskById(@Param("id") UUID id,
-                           @Param("subject") String subject,
-                           @Param("task") UUID task);
+            select t_user
+            from sdi_subtask inner join sdi_task on s_task = t_id
+            where s_id = :id
+            """,
+            nativeQuery = true)
+    UUID findParentTaskAuthor(UUID uuid);
 }

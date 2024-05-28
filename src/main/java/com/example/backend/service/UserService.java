@@ -1,47 +1,41 @@
 package com.example.backend.service;
 
+import com.example.backend.exceptions.HttpTokenException;
+import com.example.backend.model.Role;
+import com.example.backend.model.SimplifiedUser;
 import com.example.backend.model.User;
+import com.example.backend.repository.RoleRepository;
 import com.example.backend.repository.UserRepository;
-import com.example.backend.utils.ChangePasswordRequest;
 import com.example.backend.utils.LoginRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.example.backend.exceptions.FailureReason.JWT_EXPIRED;
+import static com.example.backend.exceptions.FailureReason.PERMISSION_DENIED;
 
 @Service
 public class UserService implements IUserService {
     private final UserRepository source;
+    private final RoleRepository roles;
     private final PasswordEncoder passwordEncoder;
+    private final JSONWebTokenService jwtService;
+    private final UserPermissionService userPermissionService;
 
     @Autowired
-    public UserService(UserRepository source, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository source,
+                       PasswordEncoder passwordEncoder,
+                       RoleRepository roles,
+                       JSONWebTokenService jwtService,
+                       UserPermissionService userPermissionService) {
         this.source = source;
         this.passwordEncoder = passwordEncoder;
-    }
-
-    @Override
-    public Collection<User> findByEmail(String email) {
-        return source.findByEmail(email);
-    }
-
-    @Override
-    public Optional<User> findByUsername(String username) {
-        return source.findByUsername(username);
-    }
-
-    @Override
-    public boolean existsByUsername(String username) {
-        return source.existsByUsername(username);
-    }
-
-    @Override
-    public boolean existsByEmail(String email) {
-        return source.existsByEmail(email);
+        this.roles = roles;
+        this.jwtService = jwtService;
+        this.userPermissionService = userPermissionService;
     }
 
     @Override
@@ -56,7 +50,8 @@ public class UserService implements IUserService {
         return source.findByUsername(user.getUsername())
                 .map(existing -> false)
                 .orElseGet(() -> {
-                    this.save(user);
+                    user.setRole(roles.getByName("user"));
+                    save(user);
                     return true;
                 });
     }
@@ -73,49 +68,40 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public Optional<User> getById(UUID id) {
-        return source.findById(id);
-    }
-
-    @Override
-    public User save(User entity) {
+    public void save(User entity) {
         User newUser = new User();
         newUser.setId(entity.getId());
         newUser.setUsername(entity.getUsername());
         newUser.setPassword(passwordEncoder.encode(entity.getPassword()));
         newUser.setEmail(entity.getEmail());
-        return source.save(newUser);
-    }
-
-    @Override
-    public Optional<User> update(User entity) {
-        source.updateUserById(entity.getId(),
-                entity.getUsername(),
-                entity.getEmail(),
-                passwordEncoder.encode(entity.getPassword()));
-        return source.findById(entity.getId());
-    }
-
-    @Override
-    public User delete(User entity) {
-        source.deleteById(entity.getId());
-        return entity;
-    }
-
-    @Override
-    public boolean tryChangePassword(ChangePasswordRequest request) {
-        return source.findByUsername(request.username())
-                .filter(user -> correctPassword(user.getId(), request.oldPassword()))
-                .map(user -> {
-                    user.setPassword(passwordEncoder.encode(request.newPassword()));
-                    source.save(user);
-                    return true;
-                })
-                .orElse(false);
+        source.save(newUser);
     }
 
     @Override
     public List<String> getPermissions(UUID userId) {
         return source.findPermissionsByUserId(userId);
+    }
+
+    @Override
+    public List<SimplifiedUser> getAllUsersSimplified(String token) throws HttpTokenException {
+        if (token == null || jwtService.hasExpired(token)) {
+            throw new HttpTokenException(JWT_EXPIRED);
+        }
+        UUID id = jwtService.parse(token);
+        if (!userPermissionService.canAssign(id)) {
+            throw new HttpTokenException(PERMISSION_DENIED);
+        }
+        Map<UUID, String> roleIDToName = this.roles
+                .findAll()
+                .stream()
+                .collect(Collectors.toMap(
+                        Role::getId,
+                        Role::getName));
+        return getAll().stream()
+                .map(user -> new SimplifiedUser(
+                        user.getId(),
+                        user.getUsername(),
+                        roleIDToName.get(user.getRole())))
+                .toList();
     }
 }
