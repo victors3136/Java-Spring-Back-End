@@ -1,7 +1,7 @@
 package com.example.backend.service;
 
-import com.example.backend.exceptions.InvalidJWTException;
-import com.example.backend.exceptions.PermissionDeniedException;
+import com.example.backend.exceptions.HttpTokenException;
+import com.example.backend.model.Role;
 import com.example.backend.model.SimplifiedUser;
 import com.example.backend.model.User;
 import com.example.backend.repository.RoleRepository;
@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.example.backend.exceptions.FailureReason.JWT_EXPIRED;
+import static com.example.backend.exceptions.FailureReason.PERMISSION_DENIED;
 
 @Service
 public class UserService implements IUserService {
@@ -65,13 +68,13 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public User save(User entity) {
+    public void save(User entity) {
         User newUser = new User();
         newUser.setId(entity.getId());
         newUser.setUsername(entity.getUsername());
         newUser.setPassword(passwordEncoder.encode(entity.getPassword()));
         newUser.setEmail(entity.getEmail());
-        return source.save(newUser);
+        source.save(newUser);
     }
 
     @Override
@@ -80,19 +83,23 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<SimplifiedUser> getAllUsersSimplified(String token) throws InvalidJWTException, PermissionDeniedException {
+    public List<SimplifiedUser> getAllUsersSimplified(String token) throws HttpTokenException {
         if (token == null || jwtService.hasExpired(token)) {
-            throw new InvalidJWTException();
+            throw new HttpTokenException(JWT_EXPIRED);
         }
         UUID id = jwtService.parse(token);
         if (!userPermissionService.canAssign(id)) {
-            throw new PermissionDeniedException();
+            throw new HttpTokenException(PERMISSION_DENIED);
         }
-        var roleIDToName = this.roles.findAll().stream()
-                .map(role -> new AbstractMap.SimpleImmutableEntry<>(role.getId(), role.getName()))
-                .collect(Collectors.toMap(AbstractMap.SimpleImmutableEntry::getKey, AbstractMap.SimpleImmutableEntry::getValue));
+        Map<UUID, String> roleIDToName = this.roles
+                .findAll()
+                .stream()
+                .collect(Collectors.toMap(
+                        Role::getId,
+                        Role::getName));
         return getAll().stream()
-                .map(user -> new SimplifiedUser(user.getId(),
+                .map(user -> new SimplifiedUser(
+                        user.getId(),
                         user.getUsername(),
                         roleIDToName.get(user.getRole())))
                 .toList();

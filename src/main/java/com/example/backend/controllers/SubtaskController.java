@@ -1,9 +1,6 @@
 package com.example.backend.controllers;
 
-import com.example.backend.exceptions.InvalidJWTException;
-import com.example.backend.exceptions.NotFoundException;
-import com.example.backend.exceptions.PermissionDeniedException;
-import com.example.backend.exceptions.ValidationException;
+import com.example.backend.exceptions.HttpTokenException;
 import com.example.backend.model.Subtask;
 import com.example.backend.service.SubtaskService;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +14,7 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.UUID;
 
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.CREATED;
 
 @RestController
 @Validated
@@ -36,12 +33,9 @@ public class SubtaskController {
         System.out.println(MessageFormat.format("GET /subtask/count/{0}", id));
         try {
             return ResponseEntity.ok(subtaskService.countSubtasksByTask(id, token));
-        } catch (InvalidJWTException ignored) {
-            return ResponseEntity.status(NETWORK_AUTHENTICATION_REQUIRED).body("Session expired");
-        } catch (PermissionDeniedException ignored) {
-            return ResponseEntity.status(UNAUTHORIZED).body("Permission denied");
+        } catch (HttpTokenException e) {
+            return ResponseEntity.status(e.status().asHttp()).body(e.message());
         }
-
     }
 
     @PatchMapping("/{id}")
@@ -50,25 +44,19 @@ public class SubtaskController {
         System.out.println(MessageFormat.format("Body: {0}", updatedSubtask));
         try {
             return ResponseEntity.ok(subtaskService.tryToUpdate(id, updatedSubtask, token));
-        } catch (ValidationException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (InvalidJWTException e) {
-            return ResponseEntity.status(NETWORK_AUTHENTICATION_REQUIRED).body("Session expired");
-        } catch (PermissionDeniedException e) {
-            return ResponseEntity.status(UNAUTHORIZED).body("Permission Denied");
-        } catch (NotFoundException e) {
-            return ResponseEntity.status(NOT_FOUND).body("Not Found");
+        } catch (HttpTokenException e) {
+            return ResponseEntity.status(e.status().asHttp()).body(e.message());
         }
     }
 
     @PostMapping
-    public ResponseEntity<UUID> postOneSubtask(@Valid @RequestBody @NotNull Subtask newSubtask, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<String> postOneSubtask(@Valid @RequestBody @NotNull Subtask newSubtask, @RequestHeader("Authorization") String token) {
         System.out.println("POST /subtask");
         System.out.println(MessageFormat.format("Body: {0}", newSubtask));
         try {
-            return ResponseEntity.status(CREATED).body(subtaskService.save(newSubtask, token).getId());
-        } catch (ValidationException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(CREATED).body(subtaskService.save(newSubtask, token).getId().toString());
+        } catch (HttpTokenException e) {
+            return ResponseEntity.status(e.status().asHttp()).body(e.message());
         }
     }
 
@@ -78,18 +66,14 @@ public class SubtaskController {
         try {
             subtaskService.tryToDelete(id, token);
             return ResponseEntity.noContent().build();
-        } catch (InvalidJWTException e) {
-            return ResponseEntity.status(NETWORK_AUTHENTICATION_REQUIRED).body("Session expired");
-        } catch (PermissionDeniedException e) {
-            return ResponseEntity.status(UNAUTHORIZED).body("Permission Denied");
-        } catch (NotFoundException e) {
-            return ResponseEntity.notFound().build();
+        } catch (HttpTokenException e) {
+            return ResponseEntity.status(e.status().asHttp()).body(e.message());
         }
     }
 
     @GetMapping("/for/{id}")
     public ResponseEntity<List<Subtask>> getSubtasksByParentId(@PathVariable UUID id, @RequestHeader("Authorization") String token) {
         System.out.println(MessageFormat.format("GET /subtask/by_parent/{0}", id));
-        return ResponseEntity.ok(subtaskService.getForTask(id, token).stream().toList());
+        return ResponseEntity.ok(subtaskService.getSubtasksForTask(id, token).stream().toList());
     }
 }

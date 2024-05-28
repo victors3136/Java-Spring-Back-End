@@ -1,16 +1,15 @@
 package com.example.backend.service;
 
-import com.example.backend.exceptions.ValidationException;
+import com.example.backend.exceptions.HttpTokenException;
 
 import java.util.Collection;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface EntityService<Generic> {
 
-    Collection<Generic> getAll(String token);
+    Collection<Generic> getAll(String token) throws HttpTokenException;
 
-    Optional<Generic> getById(UUID id, String token);
+    Generic getById(UUID id, String token) throws HttpTokenException;
 
-    Generic save(Generic entity, String token) throws ValidationException;
+    Generic save(Generic entity, String token) throws HttpTokenException;
 }

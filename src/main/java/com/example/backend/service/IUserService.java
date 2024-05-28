@@ -1,7 +1,6 @@
 package com.example.backend.service;
 
-import com.example.backend.exceptions.InvalidJWTException;
-import com.example.backend.exceptions.PermissionDeniedException;
+import com.example.backend.exceptions.HttpTokenException;
 import com.example.backend.model.SimplifiedUser;
 import com.example.backend.model.User;
 import com.example.backend.utils.LoginRequest;
@@ -14,7 +13,7 @@ import java.util.UUID;
 public interface IUserService {
     Collection<User> getAll();
 
-    User save(User entity);
+    void save(User entity);
 
     boolean correctPassword(UUID id, String rawPassword);
 
@@ -24,5 +23,5 @@ public interface IUserService {
 
     List<String> getPermissions(UUID userId);
 
-    List<SimplifiedUser> getAllUsersSimplified(String token) throws InvalidJWTException, PermissionDeniedException;
+    List<SimplifiedUser> getAllUsersSimplified(String token) throws HttpTokenException;
 }
