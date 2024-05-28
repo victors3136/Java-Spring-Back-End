@@ -152,8 +152,8 @@ public class TaskService implements ITaskService {
         }
         var user = jwtService.parse(userToken);
         List<String> permissions = users.findPermissionsByUserId(user);
-        if (userPermissionService.canDeleteBatch(user)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+        if (!userPermissionService.canDeleteBatch(user)) {
+            throw new HttpTokenException(PERMISSION_DENIED);
         }
         var idsOfTasksThatCanBeDeleted = taskSource.findAllById(ids)
                 .stream()
