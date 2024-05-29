@@ -1,7 +1,6 @@
 package com.example.backend.service;
 
 import com.example.backend.exceptions.ApplicationException;
-import com.example.backend.exceptions.FailureReason;
 import com.example.backend.model.Task;
 import com.example.backend.repository.TaskRepository;
 import com.example.backend.repository.UserRepository;
@@ -58,7 +57,7 @@ public class TaskService implements ITaskService {
         }
         var task = taskSource.findById(id);
         if (task.isEmpty()) {
-            throw new ApplicationException(FailureReason.NOT_FOUND);
+            throw new ApplicationException(NOT_FOUND);
         }
         return task.get();
     }
@@ -89,7 +88,7 @@ public class TaskService implements ITaskService {
         }
         var toUpdate = taskSource.findById(id);
         if (toUpdate.isEmpty()) {
-            throw new ApplicationException(FailureReason.NOT_FOUND);
+            throw new ApplicationException(NOT_FOUND);
         }
         if (!userPermissionService.canUpdate(jwtService.parse(userToken), toUpdate.get())) {
             throw new ApplicationException(PERMISSION_DENIED);
@@ -134,7 +133,7 @@ public class TaskService implements ITaskService {
         }
         var maybeTask = taskSource.findById(id);
         if (maybeTask.isEmpty()) {
-            throw new ApplicationException(FailureReason.NOT_FOUND);
+            throw new ApplicationException(NOT_FOUND);
         }
         var task = maybeTask.get();
         var user = jwtService.parse(userToken);
@@ -159,7 +158,7 @@ public class TaskService implements ITaskService {
                 .filter(task -> userPermissionService.canDelete(task, user, permissions))
                 .toList();
         if (idsOfTasksThatCanBeDeleted.isEmpty()) {
-            throw new ApplicationException(FailureReason.NOT_FOUND);
+            throw new ApplicationException(NOT_FOUND);
         }
         taskSource.deleteAllInBatch(idsOfTasksThatCanBeDeleted);
     }
