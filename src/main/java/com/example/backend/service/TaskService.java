@@ -1,7 +1,7 @@
 package com.example.backend.service;
 
-import com.example.backend.exceptions.FailureReason;
 import com.example.backend.exceptions.ApplicationException;
+import com.example.backend.exceptions.FailureReason;
 import com.example.backend.model.Task;
 import com.example.backend.repository.TaskRepository;
 import com.example.backend.repository.UserRepository;
@@ -87,8 +87,7 @@ public class TaskService implements ITaskService {
         if (jwtService.hasExpired(userToken)) {
             throw new ApplicationException(JWT_EXPIRED);
         }
-        var toUpdate = taskSource.findById(id)
-                .filter(maybeTask -> taskBelongsToTokenHolder(maybeTask, userToken));
+        var toUpdate = taskSource.findById(id);
         if (toUpdate.isEmpty()) {
             throw new ApplicationException(FailureReason.NOT_FOUND);
         }
@@ -101,7 +100,7 @@ public class TaskService implements ITaskService {
         updated.setDescription(task.getDescription());
         updated.setPriority(task.getPriority());
         updated.setDueDate(task.getDueDate());
-        updated.setUser(jwtService.parse(userToken));
+        updated.setUser(task.getUser());
         return taskSource.save(updated);
     }
 

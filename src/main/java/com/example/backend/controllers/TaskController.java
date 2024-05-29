@@ -42,7 +42,6 @@ public class TaskController {
     @GetMapping("/all")
     public ResponseEntity<?> getAllTasks(@RequestHeader("Authorization") String token) {
         System.out.println("GET /task/all");
-        System.out.println(token);
         try {
             return ResponseEntity.ok(taskService.getAll(token).stream().toList());
         } catch (ApplicationException e) {
