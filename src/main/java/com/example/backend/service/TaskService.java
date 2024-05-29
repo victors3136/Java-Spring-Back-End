@@ -1,7 +1,7 @@
 package com.example.backend.service;
 
 import com.example.backend.exceptions.FailureReason;
-import com.example.backend.exceptions.HttpTokenException;
+import com.example.backend.exceptions.ApplicationException;
 import com.example.backend.model.Task;
 import com.example.backend.repository.TaskRepository;
 import com.example.backend.repository.UserRepository;
@@ -38,41 +38,41 @@ public class TaskService implements ITaskService {
     }
 
     @Override
-    public Collection<Task> getAll(String token) throws HttpTokenException {
+    public Collection<Task> getAll(String token) throws ApplicationException {
         if (jwtService.hasExpired(token)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+            throw new ApplicationException(JWT_EXPIRED);
         }
-        if (userPermissionService.canRead(jwtService.parse(token))) {
-            throw new HttpTokenException(PERMISSION_DENIED);
+        if (!userPermissionService.canRead(jwtService.parse(token))) {
+            throw new ApplicationException(PERMISSION_DENIED);
         }
         return taskSource.findAll();
     }
 
     @Override
-    public Task getById(UUID id, String token) throws HttpTokenException {
+    public Task getById(UUID id, String token) throws ApplicationException {
         if (jwtService.hasExpired(token)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+            throw new ApplicationException(JWT_EXPIRED);
         }
-        if (userPermissionService.canRead(jwtService.parse(token))) {
-            throw new HttpTokenException(PERMISSION_DENIED);
+        if (!userPermissionService.canRead(jwtService.parse(token))) {
+            throw new ApplicationException(PERMISSION_DENIED);
         }
         var task = taskSource.findById(id);
         if (task.isEmpty()) {
-            throw new HttpTokenException(FailureReason.NOT_FOUND);
+            throw new ApplicationException(FailureReason.NOT_FOUND);
         }
         return task.get();
     }
 
     @Override
-    public Page<Task> getPage(int pageNumber, int pageSize, String userToken) throws HttpTokenException {
+    public Page<Task> getPage(int pageNumber, int pageSize, String userToken) throws ApplicationException {
         if (pageNumber < 0 || pageSize < 0 || userToken == null) {
-            throw new HttpTokenException(VALIDATION_FAILED, "Requesting an absurd scenario -- page nr: %d, page size:%s, token :%s".formatted(pageNumber, pageSize, userToken));
+            throw new ApplicationException(VALIDATION_FAILED, "Requesting an absurd scenario -- page nr: %d, page size:%s, token :%s".formatted(pageNumber, pageSize, userToken));
         }
         if (jwtService.hasExpired(userToken)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+            throw new ApplicationException(JWT_EXPIRED);
         }
         if (!userPermissionService.canRead(jwtService.parse(userToken))) {
-            throw new HttpTokenException(PERMISSION_DENIED);
+            throw new ApplicationException(PERMISSION_DENIED);
         }
         return taskSource.findAll(
                 (task, query, where) -> where.equal(task.get("user"), jwtService.parse(userToken)),
@@ -80,20 +80,20 @@ public class TaskService implements ITaskService {
     }
 
     @Override
-    public Task tryToUpdate(UUID id, Task task, String userToken) throws HttpTokenException {
+    public Task tryToUpdate(UUID id, Task task, String userToken) throws ApplicationException {
         if (task.validationFails()) {
-            throw new HttpTokenException(VALIDATION_FAILED);
+            throw new ApplicationException(VALIDATION_FAILED);
         }
         if (jwtService.hasExpired(userToken)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+            throw new ApplicationException(JWT_EXPIRED);
         }
         var toUpdate = taskSource.findById(id)
                 .filter(maybeTask -> taskBelongsToTokenHolder(maybeTask, userToken));
         if (toUpdate.isEmpty()) {
-            throw new HttpTokenException(FailureReason.NOT_FOUND);
+            throw new ApplicationException(FailureReason.NOT_FOUND);
         }
         if (!userPermissionService.canUpdate(jwtService.parse(userToken), toUpdate.get())) {
-            throw new HttpTokenException(PERMISSION_DENIED);
+            throw new ApplicationException(PERMISSION_DENIED);
         }
         Task updated = new Task();
         updated.setId(toUpdate.get().getId());
@@ -106,12 +106,12 @@ public class TaskService implements ITaskService {
     }
 
     @Override
-    public Task save(Task task, String userToken) throws HttpTokenException {
+    public Task save(Task task, String userToken) throws ApplicationException {
         if (jwtService.hasExpired(userToken)) {
             return null;
         }
         if (task.validationFails()) {
-            throw new HttpTokenException(VALIDATION_FAILED);
+            throw new ApplicationException(VALIDATION_FAILED);
         }
         UUID authorID = jwtService.parse(userToken);
         if (!userPermissionService.canCreate(authorID)) {
@@ -129,38 +129,38 @@ public class TaskService implements ITaskService {
     }
 
     @Override
-    public void tryToDelete(UUID id, String userToken) throws HttpTokenException {
+    public void tryToDelete(UUID id, String userToken) throws ApplicationException {
         if (jwtService.hasExpired(userToken)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+            throw new ApplicationException(JWT_EXPIRED);
         }
         var maybeTask = taskSource.findById(id);
         if (maybeTask.isEmpty()) {
-            throw new HttpTokenException(FailureReason.NOT_FOUND);
+            throw new ApplicationException(FailureReason.NOT_FOUND);
         }
         var task = maybeTask.get();
         var user = jwtService.parse(userToken);
         if (!userPermissionService.canDelete(task, user)) {
-            throw new HttpTokenException(PERMISSION_DENIED);
+            throw new ApplicationException(PERMISSION_DENIED);
         }
         taskSource.delete(task);
     }
 
     @Override
-    public void batchDelete(List<UUID> ids, String userToken) throws HttpTokenException {
+    public void batchDelete(List<UUID> ids, String userToken) throws ApplicationException {
         if (jwtService.hasExpired(userToken)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+            throw new ApplicationException(JWT_EXPIRED);
         }
         var user = jwtService.parse(userToken);
         List<String> permissions = users.findPermissionsByUserId(user);
         if (!userPermissionService.canDeleteBatch(user)) {
-            throw new HttpTokenException(PERMISSION_DENIED);
+            throw new ApplicationException(PERMISSION_DENIED);
         }
         var idsOfTasksThatCanBeDeleted = taskSource.findAllById(ids)
                 .stream()
                 .filter(task -> userPermissionService.canDelete(task, user, permissions))
                 .toList();
         if (idsOfTasksThatCanBeDeleted.isEmpty()) {
-            throw new HttpTokenException(FailureReason.NOT_FOUND);
+            throw new ApplicationException(FailureReason.NOT_FOUND);
         }
         taskSource.deleteAllInBatch(idsOfTasksThatCanBeDeleted);
     }

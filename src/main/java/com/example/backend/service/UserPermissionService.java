@@ -55,10 +55,13 @@ public class UserPermissionService {
     }
 
     public boolean canUpdate(UUID user, Subtask subtask, List<String> permissions) {
+        System.out.println(permissions.stream().reduce("", (s1, s2) -> s1 + " " + s2));
         if (permissions.contains("edit-any")) return true;
         if (permissions.contains("edit-own")) {
-            var parentTask = tryGetParentTaskForSubtask.apply(subtask.getId());
-            return parentTask.isPresent() && parentTask.get().getUser().equals(user);
+            return tryGetParentTaskForSubtask
+                    .apply(subtask.getTask())
+                    .map(task -> task.getUser().equals(user))
+                    .orElse(false);
         }
         return false;
     }
@@ -66,6 +69,7 @@ public class UserPermissionService {
     public boolean canDelete(Task task, UUID user) {
         return canDelete(task, user, getUserPermissions.apply(user));
     }
+
     public boolean canDelete(Subtask subtask, UUID user) {
         return canDelete(subtask, user, getUserPermissions.apply(user));
     }
@@ -75,14 +79,18 @@ public class UserPermissionService {
         if (permissions.contains("delete-own")) return task.getUser().equals(user);
         return false;
     }
+
     public boolean canDelete(Subtask subtask, UUID user, List<String> permissions) {
         if (permissions.contains("delete-any")) return true;
-        if (permissions.contains("delete-own")){
-            var parentTask = tryGetParentTaskForSubtask.apply(subtask.getId());
-            return parentTask.isPresent() && parentTask.get().getUser().equals(user);
+        if (permissions.contains("delete-own")) {
+            return tryGetParentTaskForSubtask
+                    .apply(subtask.getTask())
+                    .map(task -> task.getUser().equals(user))
+                    .orElse(false);
         }
         return false;
     }
+
     public boolean canDeleteBatch(UUID user) {
         return canDeleteBatch(getUserPermissions.apply(user));
     }

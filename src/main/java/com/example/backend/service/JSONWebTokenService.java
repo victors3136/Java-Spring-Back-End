@@ -48,12 +48,16 @@ public class JSONWebTokenService {
     }
 
     public boolean hasExpired(String token) {
-        return decodeTokenBody.apply(token)
-                .getExpiration()
-                .before(TokenTimespanService.currentTime());
+        try {
+            return decodeTokenBody.apply(token)
+                    .getExpiration()
+                    .before(TokenTimespanService.currentTime());
+        } catch (ExpiredJwtException ignored) {
+            return true;
+        }
     }
 
-    public UUID parse(String token) {
+    public UUID parse(String token) throws ExpiredJwtException {
         return decode(stripBearer(token));
     }
 }

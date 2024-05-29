@@ -1,6 +1,6 @@
 package com.example.backend.controllers;
 
-import com.example.backend.exceptions.HttpTokenException;
+import com.example.backend.exceptions.ApplicationException;
 import com.example.backend.model.User;
 import com.example.backend.service.IUserService;
 import com.example.backend.service.JSONWebTokenService;
@@ -33,7 +33,7 @@ public class UserController {
         System.out.println("GET /user/all");
         try {
             return ResponseEntity.ok(userService.getAllUsersSimplified(token));
-        } catch (HttpTokenException e) {
+        } catch (ApplicationException e) {
             return ResponseEntity.status(e.status().asHttp()).body(e.message());
         }
     }
@@ -42,34 +42,27 @@ public class UserController {
     public ResponseEntity<String> register(@Validated @RequestBody User user) {
         System.out.println("POST /user/register");
         System.out.println(user);
-        try {
-            return userService.tryRegister(user)
-                    ? ResponseEntity.ok().body("Registration successful")
-                    : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Username already taken");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return userService.tryRegister(user)
+                ? ResponseEntity.ok().body("Registration successful")
+                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Username already taken");
+
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Validated @RequestBody LoginRequest loginRequest) {
         System.out.println("POST /user/login");
         System.out.println(loginRequest);
-        try {
-            var user = userService.tryLogin(loginRequest);
-            if (user.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Invalid username or password");
-            }
-            var id = user.get().getId();
-            return ResponseEntity.ok()
-                    .body(new LoginResponse(
-                            jwtService.encode(id),
-                            id,
-                            userService.getPermissions(id)));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(e.getMessage());
+        var user = userService.tryLogin(loginRequest);
+        if (user.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid username or password");
         }
+        var id = user.get().getId();
+        return ResponseEntity.ok()
+                .body(new LoginResponse(
+                        jwtService.encode(id),
+                        id,
+                        userService.getPermissions(id)));
+
     }
 }

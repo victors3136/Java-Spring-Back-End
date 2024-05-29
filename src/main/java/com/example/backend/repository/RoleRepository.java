@@ -14,7 +14,7 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
             -- noinspection SqlResolve
             select r_id
             from sdi_role
-            where r_name = :name;
+            where r_name = :name ;
             """, nativeQuery = true)
     UUID getByName(@Param("name") String name);
 

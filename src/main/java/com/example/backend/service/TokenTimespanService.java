@@ -13,6 +13,7 @@ public class TokenTimespanService {
             *     10   hours
             _________________________________ */
             = 36_000_000 /* milliseconds */;
+//     = 30_000; // 30 seconds
     public static Date currentTime(){
         return new Date();
     }

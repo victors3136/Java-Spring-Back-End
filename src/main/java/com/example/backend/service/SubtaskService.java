@@ -1,6 +1,6 @@
 package com.example.backend.service;
 
-import com.example.backend.exceptions.HttpTokenException;
+import com.example.backend.exceptions.ApplicationException;
 import com.example.backend.model.Subtask;
 import com.example.backend.repository.SubtaskRepository;
 import org.springframework.data.domain.Page;
@@ -25,41 +25,41 @@ public class SubtaskService implements ISubtaskService {
     }
 
     @Override
-    public Collection<Subtask> getAll(String token) throws HttpTokenException {
+    public Collection<Subtask> getAll(String token) throws ApplicationException {
         if (jwtService.hasExpired(token)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+            throw new ApplicationException(JWT_EXPIRED);
         }
         if (!userPermissionService.canRead(jwtService.parse(token))) {
-            throw new HttpTokenException(PERMISSION_DENIED);
+            throw new ApplicationException(PERMISSION_DENIED);
         }
         return source.findAll();
     }
 
     @Override
-    public Subtask getById(UUID id, String token) throws HttpTokenException {
+    public Subtask getById(UUID id, String token) throws ApplicationException {
         if (jwtService.hasExpired(token)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+            throw new ApplicationException(JWT_EXPIRED);
         }
         if (!userPermissionService.canRead(jwtService.parse(token))) {
-            throw new HttpTokenException(PERMISSION_DENIED);
+            throw new ApplicationException(PERMISSION_DENIED);
         }
         var subtask = source.findById(id);
         if (subtask.isEmpty()) {
-            throw new HttpTokenException(NOT_FOUND);
+            throw new ApplicationException(NOT_FOUND);
         }
         return subtask.get();
     }
 
     @Override
-    public Subtask save(Subtask entity, String token) throws HttpTokenException {
+    public Subtask save(Subtask entity, String token) throws ApplicationException {
         if (jwtService.hasExpired(token)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+            throw new ApplicationException(JWT_EXPIRED);
         }
         if (!userPermissionService.canCreate(jwtService.parse(token))) {
-            throw new HttpTokenException(PERMISSION_DENIED);
+            throw new ApplicationException(PERMISSION_DENIED);
         }
         if (entity.validationFails()) {
-            throw new HttpTokenException(VALIDATION_FAILED);
+            throw new ApplicationException(VALIDATION_FAILED);
         }
         Subtask newSubtask = new Subtask();
         newSubtask.setSubject(entity.getSubject());
@@ -71,17 +71,17 @@ public class SubtaskService implements ISubtaskService {
     public Page<Subtask> getPage(int pageNumber,
                                  int pageSize,
                                  UUID taskID,
-                                 String token) throws HttpTokenException {
+                                 String token) throws ApplicationException {
         if (pageNumber < 0 || pageSize < 0 || taskID == null || token == null) {
-            throw new HttpTokenException(VALIDATION_FAILED,
+            throw new ApplicationException(VALIDATION_FAILED,
                     "Requesting an absurd scenario -- page nr: %d, page size: %d, taskID: %s, token: %s"
                             .formatted(pageNumber, pageSize, taskID, token));
         }
         if (jwtService.hasExpired(token)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+            throw new ApplicationException(JWT_EXPIRED);
         }
         if (!userPermissionService.canCreate(jwtService.parse(token))) {
-            throw new HttpTokenException(PERMISSION_DENIED);
+            throw new ApplicationException(PERMISSION_DENIED);
         }
         return source.findAll(
                 (subtask, query, where) -> where
@@ -91,30 +91,34 @@ public class SubtaskService implements ISubtaskService {
     }
 
     @Override
-    public long countSubtasksByTask(UUID id, String token) throws HttpTokenException {
+    public long countSubtasksByTask(UUID id, String token) throws ApplicationException {
         if (jwtService.hasExpired(token)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+            throw new ApplicationException(JWT_EXPIRED);
         }
         if (!userPermissionService.canRead(jwtService.parse(token))) {
-            throw new HttpTokenException(PERMISSION_DENIED);
+            throw new ApplicationException(PERMISSION_DENIED);
         }
         return source.countSubtasksByTask(id);
     }
 
     @Override
-    public Subtask tryToUpdate(UUID id, Subtask subtask, String token) throws HttpTokenException {
+    public Subtask tryToUpdate(UUID id, Subtask subtask, String token) throws ApplicationException {
         if (jwtService.hasExpired(token)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+            System.out.println("Expired jwt");
+            throw new ApplicationException(JWT_EXPIRED);
         }
         if (!userPermissionService.canUpdate(jwtService.parse(token), subtask)) {
-            throw new HttpTokenException(PERMISSION_DENIED);
+            System.out.println("Can't update");
+            throw new ApplicationException(PERMISSION_DENIED);
         }
         if (subtask.validationFails()) {
-            throw new HttpTokenException(VALIDATION_FAILED);
+            System.out.println("Failed validation");
+            throw new ApplicationException(VALIDATION_FAILED);
         }
         var maybeSubtask = source.findById(id);
         if (maybeSubtask.isEmpty()) {
-            throw new HttpTokenException(NOT_FOUND);
+            System.out.println("Not found");
+            throw new ApplicationException(NOT_FOUND);
         }
         var toUpdate = maybeSubtask.get();
         Subtask updated = new Subtask();
@@ -125,24 +129,30 @@ public class SubtaskService implements ISubtaskService {
     }
 
     @Override
-    public Subtask tryToDelete(UUID id, String token) throws HttpTokenException {
+    public Subtask tryToDelete(UUID id, String token) throws ApplicationException {
         if (jwtService.hasExpired(token)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+            throw new ApplicationException(JWT_EXPIRED);
         }
         var maybeSubtask = source.findById(id);
         if (maybeSubtask.isEmpty()) {
-            throw new HttpTokenException(NOT_FOUND);
+            throw new ApplicationException(NOT_FOUND);
         }
         var subtask = maybeSubtask.get();
         if (!userPermissionService.canDelete(subtask, jwtService.parse(token))) {
-            throw new HttpTokenException(PERMISSION_DENIED);
+            throw new ApplicationException(PERMISSION_DENIED);
         }
         source.delete(subtask);
         return subtask;
     }
 
     @Override
-    public Collection<Subtask> getSubtasksForTask(UUID id, String token) {
+    public Collection<Subtask> getSubtasksForTask(UUID id, String token) throws ApplicationException {
+        if (jwtService.hasExpired(token)) {
+            throw new ApplicationException(JWT_EXPIRED);
+        }
+        if (!userPermissionService.canRead(jwtService.parse(token))) {
+            throw new ApplicationException(PERMISSION_DENIED);
+        }
         return source.findByTask(id);
     }
 }

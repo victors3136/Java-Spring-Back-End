@@ -1,6 +1,6 @@
 package com.example.backend.service;
 
-import com.example.backend.exceptions.HttpTokenException;
+import com.example.backend.exceptions.ApplicationException;
 import com.example.backend.model.SimplifiedUser;
 import com.example.backend.model.User;
 import com.example.backend.utils.LoginRequest;
@@ -23,5 +23,5 @@ public interface IUserService {
 
     List<String> getPermissions(UUID userId);
 
-    List<SimplifiedUser> getAllUsersSimplified(String token) throws HttpTokenException;
+    List<SimplifiedUser> getAllUsersSimplified(String token) throws ApplicationException;
 }

@@ -1,6 +1,6 @@
 package com.example.backend.service;
 
-import com.example.backend.exceptions.HttpTokenException;
+import com.example.backend.exceptions.ApplicationException;
 import com.example.backend.model.Role;
 import com.example.backend.model.SimplifiedUser;
 import com.example.backend.model.User;
@@ -83,13 +83,13 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<SimplifiedUser> getAllUsersSimplified(String token) throws HttpTokenException {
+    public List<SimplifiedUser> getAllUsersSimplified(String token) throws ApplicationException {
         if (token == null || jwtService.hasExpired(token)) {
-            throw new HttpTokenException(JWT_EXPIRED);
+            throw new ApplicationException(JWT_EXPIRED);
         }
         UUID id = jwtService.parse(token);
         if (!userPermissionService.canAssign(id)) {
-            throw new HttpTokenException(PERMISSION_DENIED);
+            throw new ApplicationException(PERMISSION_DENIED);
         }
         Map<UUID, String> roleIDToName = this.roles
                 .findAll()
