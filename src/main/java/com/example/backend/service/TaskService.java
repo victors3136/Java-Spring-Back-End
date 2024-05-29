@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 import com.example.backend.exceptions.ApplicationException;
+import com.example.backend.exceptions.FailureReason;
 import com.example.backend.model.Task;
 import com.example.backend.repository.TaskRepository;
 import com.example.backend.repository.UserRepository;
