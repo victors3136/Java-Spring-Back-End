@@ -1,7 +1,6 @@
 package com.example.backend.service;
 
 import com.example.backend.exceptions.ApplicationException;
-import com.example.backend.exceptions.FailureReason;
 import com.example.backend.model.Task;
 import com.example.backend.repository.TaskRepository;
 import com.example.backend.repository.UserRepository;
@@ -66,7 +65,9 @@ public class TaskService implements ITaskService {
     @Override
     public Page<Task> getPage(int pageNumber, int pageSize, String userToken) throws ApplicationException {
         if (pageNumber < 0 || pageSize < 0 || userToken == null) {
-            throw new ApplicationException(VALIDATION_FAILED, "Requesting an absurd scenario -- page nr: %d, page size:%s, token :%s".formatted(pageNumber, pageSize, userToken));
+            throw new ApplicationException(VALIDATION_FAILED,
+                    "Requesting an absurd scenario -- page nr: %d, page size:%s, token :%s"
+                            .formatted(pageNumber, pageSize, userToken));
         }
         if (jwtService.hasExpired(userToken)) {
             throw new ApplicationException(JWT_EXPIRED);

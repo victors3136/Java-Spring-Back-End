@@ -3,6 +3,7 @@ package com.example.backend.service;
 import com.example.backend.exceptions.ApplicationException;
 import com.example.backend.model.SimplifiedUser;
 import com.example.backend.model.User;
+import com.example.backend.utils.ChangeUserRoleRequest;
 import com.example.backend.utils.LoginRequest;
 
 import java.util.Collection;
@@ -24,4 +25,8 @@ public interface IUserService {
     List<String> getPermissions(UUID userId);
 
     List<SimplifiedUser> getAllUsersSimplified(String token) throws ApplicationException;
+
+    User tryChangeUserRole(String token, ChangeUserRoleRequest request) throws ApplicationException;
+
+    User tryKickUser(String token, UUID userId) throws ApplicationException;
 }

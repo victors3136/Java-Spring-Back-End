@@ -6,6 +6,7 @@ import com.example.backend.model.SimplifiedUser;
 import com.example.backend.model.User;
 import com.example.backend.repository.RoleRepository;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.utils.ChangeUserRoleRequest;
 import com.example.backend.utils.LoginRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,8 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.example.backend.exceptions.FailureReason.JWT_EXPIRED;
-import static com.example.backend.exceptions.FailureReason.PERMISSION_DENIED;
+import static com.example.backend.exceptions.FailureReason.*;
 
 @Service
 public class UserService implements IUserService {
@@ -103,5 +103,44 @@ public class UserService implements IUserService {
                         user.getUsername(),
                         roleIDToName.get(user.getRole())))
                 .toList();
+    }
+
+    @Override
+    public User tryChangeUserRole(String token, ChangeUserRoleRequest request) throws ApplicationException {
+        if (jwtService.hasExpired(token)) {
+            throw new ApplicationException(JWT_EXPIRED);
+        }
+        if (!userPermissionService.canAssign(jwtService.parse(token))) {
+            throw new ApplicationException(PERMISSION_DENIED);
+        }
+        var maybeRoleId = source.findRoleByName(request.role());
+        if (maybeRoleId.isEmpty()) {
+            throw new ApplicationException(NOT_FOUND);
+        }
+        var roleId = maybeRoleId.get();
+        var maybeUser = source.findById(request.id());
+        if (maybeUser.isEmpty()) {
+            throw new ApplicationException(NOT_FOUND);
+        }
+        var user = maybeUser.get();
+        user.setRole(roleId);
+        return source.save(user);
+    }
+
+    @Override
+    public User tryKickUser(String token, UUID userId) throws ApplicationException {
+        if (jwtService.hasExpired(token)) {
+            throw new ApplicationException(JWT_EXPIRED);
+        }
+        if (!userPermissionService.canIKickIt(jwtService.parse(token))) {
+            throw new ApplicationException(PERMISSION_DENIED);
+        }
+        var maybeUser = source.findById(userId);
+        if (maybeUser.isEmpty()) {
+            throw new ApplicationException(NOT_FOUND);
+        }
+        var user = maybeUser.get();
+        source.delete(user);
+        return user;
     }
 }

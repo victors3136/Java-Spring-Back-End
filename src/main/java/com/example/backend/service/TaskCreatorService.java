@@ -49,12 +49,19 @@ public class TaskCreatorService {
         if (availableUsers.isEmpty()) {
             return null;
         }
-        Task newTask = new Task(
-                activities[(int) (generator % activities.length)] + " @ " + subjects[(int) (generator % subjects.length)],
-                "None provided",
-                (byte) (generator % 10 + 1),
-                Instant.now().plus((((generator++) % 10) + (random.nextInt() % 10) - 5), ChronoUnit.DAYS),
-                availableUsers.get(random.nextInt() % availableUsers.size()));
-        return taskRepository.save(newTask);
+        return taskRepository.save(
+                new Task(
+                        "%s @ %s".formatted(
+                                activities[(int) (generator % activities.length)],
+                                subjects[(int) (generator % subjects.length)]),
+                        "None provided",
+                        (byte) (generator % 10 + 1),
+                        Instant.now().plus(
+                                (((generator++) % 10) + (random.nextInt() % 10) - 5),
+                                ChronoUnit.DAYS
+                        ),
+                        availableUsers.get(random.nextInt() % availableUsers.size())
+                )
+        );
     }
 }

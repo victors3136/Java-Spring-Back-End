@@ -44,4 +44,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             """, nativeQuery = true)
     List<UUID> findByPermission(@Param("name") String name);
 
+    @Query(value = """
+            -- noinspection SqlResolve
+            select r_id
+            from sdi_role
+            where r_name = :roleName
+            """, nativeQuery = true)
+    Optional<UUID> findRoleByName(@Param("roleName") String roleName);
 }
