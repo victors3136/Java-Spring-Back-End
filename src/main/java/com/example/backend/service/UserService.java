@@ -51,9 +51,8 @@ public class UserService implements IUserService {
                 .map(existing -> false)
                 .orElseGet(() -> {
                     user.setRole(roles.getByName("user"));
-                    System.out.println(user);
-                    save(user);
-
+                    user.setPassword(passwordEncoder.encode(user.getPassword()));
+                    source.save(user);
                     return true;
                 });
     }
